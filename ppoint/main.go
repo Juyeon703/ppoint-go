@@ -6,17 +6,19 @@ import (
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"mysql01/db"
+	dto2 "mysql01/dto"
+	"mysql01/query"
 	"mysql01/types"
 	"mysql01/utils"
 	"os"
 	"strconv"
 )
 
-var DbConf *types.DbConfig
+var DbConf *query.DbConfig
 var scanner *bufio.Scanner
 
 func init() {
-	DbConf = new(types.DbConfig)
+	DbConf = new(query.DbConfig)
 	DbConf.DbConnection = new(sql.DB)
 
 	var dbConn *sql.DB
@@ -128,7 +130,7 @@ func main() {
 		//fmt.Println("DELETE_SETTING")
 	*/
 	scanner = bufio.NewScanner(os.Stdin)
-	var isExistMember = new(types.MemberDto)
+	var isExistMember = new(dto2.MemberDto)
 	var temp string
 
 	for {
@@ -267,7 +269,7 @@ func main() {
 		} else if temp == "2" { // 모든 고객 관리
 			// 정렬방식 : 높은 등급 순 -> 이름 순
 			fmt.Println("=================================")
-			var memberList []types.MemberDto
+			var memberList []dto2.MemberDto
 			if memberList, err = DbConf.SelectMembersOrderByGrade(); err != nil {
 				panic(err.Error())
 			}
@@ -450,7 +452,7 @@ func AddRevenue(memberId, totalPoint int) error {
 
 func UpgradeMember(memberId int) error {
 	var err error
-	var howTotalSales = new(types.Total)
+	var howTotalSales = new(dto2.MemberSalesDto)
 	var grade = new(types.Grade)
 
 	if howTotalSales, err = DbConf.SelectTotalSalesByMember(memberId); err != nil {
