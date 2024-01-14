@@ -1,6 +1,6 @@
 package query
 
-import "mysql01/types"
+import "ppoint/types"
 
 func (dbc *DbConfig) CreateSetting(settingName, settingValue string) error {
 	_, err := dbc.DbConnection.Exec("INSERT INTO `ppoint`.`setting` (`setting_name`, `setting_value`) VALUES (?, ?);", settingName, settingValue)

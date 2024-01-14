@@ -1,9 +1,9 @@
 package query
 
 import (
-	"mysql01/dto"
-	"mysql01/types"
-	"mysql01/utils"
+	"ppoint/dto"
+	"ppoint/types"
+	"ppoint/utils"
 )
 
 func (dbc *DbConfig) CreateMember(member *types.Member) (int, error) {

@@ -1,6 +1,6 @@
 package query
 
-import "mysql01/types"
+import "ppoint/types"
 
 func (dbc *DbConfig) CreateGrade(gradeName string) error {
 	_, err := dbc.DbConnection.Exec("INSERT INTO `ppoint`.`grade` (`grade_name`) VALUES (?);", gradeName)

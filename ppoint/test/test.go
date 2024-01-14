@@ -2,8 +2,8 @@ package test
 
 import (
 	"fmt"
-	"mysql01/query"
-	"mysql01/types"
+	"ppoint/query"
+	"ppoint/types"
 )
 
 func Test(DbConf *query.DbConfig) {

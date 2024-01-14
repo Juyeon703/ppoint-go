@@ -1,8 +1,8 @@
 package query
 
 import (
-	"mysql01/dto"
-	"mysql01/types"
+	"ppoint/dto"
+	"ppoint/types"
 )
 
 func (dbc *DbConfig) CreateRevenue(revenue *types.Revenue) error {

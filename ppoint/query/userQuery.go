@@ -1,8 +1,8 @@
 package query
 
 import (
-	"mysql01/types"
-	"mysql01/utils"
+	"ppoint/types"
+	"ppoint/utils"
 )
 
 func (dbc *DbConfig) CreateUser(storeName, userName, phoneNumber, id, password, email string) error {

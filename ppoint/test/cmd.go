@@ -3,11 +3,11 @@ package test
 import (
 	"bufio"
 	"fmt"
-	dto2 "mysql01/dto"
-	"mysql01/query"
-	"mysql01/types"
-	"mysql01/utils"
 	"os"
+	dto2 "ppoint/dto"
+	"ppoint/query"
+	"ppoint/types"
+	"ppoint/utils"
 	"strconv"
 )
 
