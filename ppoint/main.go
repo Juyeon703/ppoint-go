@@ -3,11 +3,9 @@ package main
 import (
 	"database/sql"
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/lxn/walk"
-	. "github.com/lxn/walk/declarative"
 	"ppoint/db"
+	"ppoint/gui"
 	"ppoint/query"
-	"strings"
 )
 
 var DbConf *query.DbConfig
@@ -26,26 +24,6 @@ func init() {
 }
 
 func main() {
-	var inTE, outTE *walk.TextEdit
-
-	MainWindow{
-		Title:   "8767",
-		MinSize: Size{600, 400},
-		Layout:  VBox{},
-		Children: []Widget{
-			HSplitter{
-				Children: []Widget{
-					TextEdit{AssignTo: &inTE},
-					TextEdit{AssignTo: &outTE, ReadOnly: true},
-				},
-			},
-			PushButton{
-				Text: "SCREAM",
-				OnClicked: func() {
-					outTE.SetText(strings.ToUpper(inTE.Text()))
-				},
-			},
-		},
-	}.Run()
+	gui.MainPage()
 	//test.CmdTest(DbConf)
 } // main
