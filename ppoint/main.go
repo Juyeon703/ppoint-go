@@ -24,6 +24,6 @@ func init() {
 }
 
 func main() {
-	gui.MainPage()
+	gui.MainPage(DbConf)
 	//test.CmdTest(DbConf)
 } // main

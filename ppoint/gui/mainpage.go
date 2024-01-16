@@ -4,21 +4,26 @@ import (
 	"bytes"
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
+	"ppoint/query"
 )
 
 type AppMainWindow struct {
 	*MultiPageMainWindow
 }
 
+// MultiPageMainWindow 최상위 메인
+var winMain *AppMainWindow
+
+var dbconn *query.DbConfig
 var titleWidth, titleHeight = 1000, 800
 
-func MainPage() {
+func MainPage(DbConf *query.DbConfig) {
+	dbconn = DbConf
 	walk.Resources.SetRootDirPath("img")
 	var err error
 	//var titleWidth, titleHeight = 500, 500
 
-	//MultiPageMainWindow 최상위 메인
-	var winMain = new(AppMainWindow)
+	winMain = new(AppMainWindow)
 
 	//multiple page main
 	var multiPageMainWindow *MultiPageMainWindow
