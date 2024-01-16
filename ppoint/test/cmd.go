@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	dto2 "ppoint/dto"
+	"ppoint/dto"
 	"ppoint/query"
 	"ppoint/types"
 	"ppoint/utils"
@@ -17,7 +17,7 @@ func CmdTest(dbc *query.DbConfig) {
 	var err error
 
 	scanner = bufio.NewScanner(os.Stdin)
-	var isExistMember = new(dto2.MemberDto)
+	var isExistMember = new(dto.MemberDto)
 	var temp string
 
 	for {
@@ -156,7 +156,7 @@ func CmdTest(dbc *query.DbConfig) {
 		} else if temp == "2" { // 모든 고객 관리
 			// 정렬방식 : 높은 등급 순 -> 이름 순
 			fmt.Println("=================================")
-			var memberList []dto2.MemberDto
+			var memberList []dto.MemberDto
 			if memberList, err = dbc.SelectMembersOrderByGrade(); err != nil {
 				panic(err.Error())
 			}
@@ -338,7 +338,7 @@ func AddRevenue(memberId, totalPoint int, dbc *query.DbConfig) error {
 
 func UpgradeMember(memberId int, dbc *query.DbConfig) error {
 	var err error
-	var howTotalSales = new(dto2.MemberSalesDto)
+	var howTotalSales = new(dto.MemberSalesDto)
 	var grade = new(types.Grade)
 
 	if howTotalSales, err = dbc.SelectTotalSalesByMember(memberId); err != nil {

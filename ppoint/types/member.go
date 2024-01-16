@@ -5,8 +5,8 @@ type Member struct {
 	MemberName  string
 	PhoneNumber string
 	Birth       string
-	GradeId     int
 	TotalPoint  int
+	VisitCount  int
 	CreateDate  string
 	UpdateDate  string
 }
