@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
-	"ppoint/types"
+	"ppoint/dto"
 )
 
 type PointPage struct {
@@ -46,7 +46,7 @@ func newPointPage(parent walk.Container) (Page, error) {
 					PushButton{
 						Text: "고객 조회",
 						OnClicked: func() {
-							var memberList []types.Member
+							var memberList []dto.MemberDto
 							var err error
 
 							if searchPhoneNumber.Text() == "" {

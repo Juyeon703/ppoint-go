@@ -102,20 +102,6 @@ func RunMemberEditDialog(owner walk.Form, member *MDto) (int, error) {
 	}.Run(owner)
 }
 
-type GradeDto struct {
-	GradeId   int
-	GradeName string
-}
-
-func KnownGrades() []*GradeDto {
-	return []*GradeDto{
-		{1, "잠재"},
-		{2, "신규"},
-		{3, "우수"},
-		{4, "평생"},
-	}
-}
-
 type MDto struct {
 	Name        string
 	GradeName   string

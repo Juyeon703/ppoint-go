@@ -17,8 +17,12 @@ type MemberPage struct {
 func newMemberPage(parent walk.Container) (Page, error) {
 	p := new(MemberPage)
 	var tv *walk.TableView
-	var memberIdLE, memberNameLE, phonenumLE, birthLE, pointLE, countLE, cdtLE, udtLE *walk.LineEdit
-	model := NewMembersModel()
+	var mudb *walk.DataBinder
+	var memberIdLE, memberNameLE, phonenumLE, birthLE, pointLE, countLE, cdtLE, udtLE, mpSearchLE *walk.LineEdit
+	var tvResultLabel *walk.Label
+	var mpSearchBtn, creditBtn *walk.PushButton
+	var updateMember = new(dto.MemberUpdateDto)
+	model := NewMembersModel("")
 
 	if err := (Composite{
 		AssignTo: &p.Composite,
@@ -33,13 +37,14 @@ func newMemberPage(parent walk.Container) (Page, error) {
 					PushButton{
 						Text: "신규 고객 등록",
 						OnClicked: func() {
-							member := new(MDto)
-							if cmd, err := RunMemberEditDialog(winMain, member); err != nil {
-								fmt.Println("====err=====")
+							addMember := new(dto.MemberAddDto)
+							if cmd, err := RunMemberAddDialog(winMain, addMember); err != nil {
 								log.Print(err)
 							} else if cmd == walk.DlgCmdOK {
-								fmt.Println("====수정 완료=====")
-								//outTE.SetText(fmt.Sprintf("%+v", animal))
+								fmt.Println("====회원 등록=====")
+								fmt.Println(addMember)
+								model = tvReloading(model, "", tv, tvResultLabel)
+								tv.SetCurrentIndex(model.RowCount() - 1)
 							}
 						},
 					},
@@ -49,6 +54,12 @@ func newMemberPage(parent walk.Container) (Page, error) {
 					Composite{
 						Layout: Grid{Columns: 4},
 						Border: true,
+						DataBinder: DataBinder{
+							AssignTo:       &mudb,
+							Name:           "updateMember",
+							DataSource:     updateMember,
+							ErrorPresenter: ToolTipErrorPresenter{},
+						},
 						Children: []Widget{
 							Composite{
 								Layout: HBox{},
@@ -71,6 +82,7 @@ func newMemberPage(parent walk.Container) (Page, error) {
 									LineEdit{
 										AssignTo: &memberNameLE,
 										ReadOnly: true,
+										Text:     Bind("MemberName", SelRequired{}),
 									},
 								},
 							},
@@ -83,6 +95,7 @@ func newMemberPage(parent walk.Container) (Page, error) {
 									LineEdit{
 										AssignTo: &phonenumLE,
 										ReadOnly: true,
+										Text:     Bind("PhoneNumber", Regexp{Pattern: "010([0-9]{7,8}$)"}, SelRequired{}),
 									},
 								},
 							},
@@ -95,6 +108,7 @@ func newMemberPage(parent walk.Container) (Page, error) {
 									LineEdit{
 										AssignTo: &birthLE,
 										ReadOnly: true,
+										Text:     Bind("Birth", Regexp{Pattern: "(19[0-9][0-9]|20[0-9][0-9])-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])$"}),
 									},
 								},
 							},
@@ -107,6 +121,7 @@ func newMemberPage(parent walk.Container) (Page, error) {
 									LineEdit{
 										AssignTo: &pointLE,
 										ReadOnly: true,
+										Text:     Bind("TotalPoint", Regexp{Pattern: "^[0-9]*$"}),
 									},
 								},
 							},
@@ -119,6 +134,7 @@ func newMemberPage(parent walk.Container) (Page, error) {
 									LineEdit{
 										AssignTo: &countLE,
 										ReadOnly: true,
+										Text:     Bind("VisitCount", Regexp{Pattern: "^[0-9]*$"}),
 									},
 								},
 							},
@@ -149,18 +165,27 @@ func newMemberPage(parent walk.Container) (Page, error) {
 							PushButton{
 								Text: "수정",
 								OnClicked: func() {
-									member := new(MDto)
-									if cmd, err := RunMemberEditDialog(winMain, member); err != nil {
-										fmt.Println("====err=====")
-										log.Print(err)
-									} else if cmd == walk.DlgCmdOK {
-										fmt.Println("====수정 완료=====")
-										//outTE.SetText(fmt.Sprintf("%+v", animal))
+									if memberIdLE.Text() != "" {
+										memberNameLE.SetReadOnly(false)
+										phonenumLE.SetReadOnly(false)
+										birthLE.SetReadOnly(false)
+										pointLE.SetReadOnly(false)
+										countLE.SetReadOnly(false)
 									}
+
+									//member := new(MDto)
+									//if cmd, err := RunMemberEditDialog(winMain, member); err != nil {
+									//	fmt.Println("====err=====")
+									//	log.Print(err)
+									//} else if cmd == walk.DlgCmdOK {
+									//	fmt.Println("====수정 완료=====")
+									//	//outTE.SetText(fmt.Sprintf("%+v", animal))
+									//}
 								},
 							},
 							PushButton{
-								Text: "결제",
+								AssignTo: &creditBtn,
+								Text:     "결제",
 								OnClicked: func() {
 
 								},
@@ -169,6 +194,30 @@ func newMemberPage(parent walk.Container) (Page, error) {
 								Text: "매출 이력 조회",
 								OnClicked: func() {
 
+								},
+							},
+							PushButton{
+								Text: "OK",
+								OnClicked: func() {
+									if !memberNameLE.ReadOnly() {
+										if err := mudb.Submit(); err != nil {
+											log.Print(err)
+											return
+										}
+										fmt.Println(mudb.DataSource())
+										memberNameLE.SetReadOnly(true)
+										phonenumLE.SetReadOnly(true)
+										birthLE.SetReadOnly(true)
+										pointLE.SetReadOnly(true)
+										countLE.SetReadOnly(true)
+									}
+									//if memberId, err := dbconn.UpdateMemberByPhoneNumber(member); err != nil {
+									//	log.Print(err)
+									//	return
+									//} else {
+									//	fmt.Println("======> UpdateMemberByPhoneNumber() 호출")
+									//	fmt.Println("수정된 회원 번호 : ", memberId)
+									//}
 								},
 							},
 						},
@@ -181,18 +230,39 @@ func newMemberPage(parent walk.Container) (Page, error) {
 					Label{
 						Text: "검색 : ",
 					},
-					LineEdit{},
+					LineEdit{
+						AssignTo: &mpSearchLE,
+					},
 					PushButton{
-						Text: "검색",
+						AssignTo: &mpSearchBtn,
+						Text:     "검색",
 						OnClicked: func() {
-
+							if mpSearchLE.Text() != "" {
+								// 이름, 폰 번호
+								fmt.Println("검색어 : ", mpSearchLE.Text())
+								model = tvReloading(model, mpSearchLE.Text(), tv, tvResultLabel)
+							}
+						},
+					},
+					PushButton{
+						Text: "초기화",
+						OnClicked: func() {
+							if mpSearchLE.Text() != "" {
+								fmt.Println("==초기화==")
+								mpSearchLE.SetText("")
+								model = tvReloading(model, "", tv, tvResultLabel)
+							}
 						},
 					},
 					HSpacer{
 						Size: 500,
 					},
 					Label{
-						Text: "검색 수 : " + strconv.Itoa(model.RowCount()),
+						Text: "검색 수 : ",
+					},
+					Label{
+						Text:     strconv.Itoa(model.RowCount()),
+						AssignTo: &tvResultLabel,
 					},
 				},
 			},
@@ -205,29 +275,29 @@ func newMemberPage(parent walk.Container) (Page, error) {
 				MinSize:          Size{300, 300},
 				Columns: []TableViewColumn{
 					{Title: "번호", DataMember: "MemberId", Hidden: true},
-					{Title: "등급", DataMember: "GradeName"},
 					{Title: "이름", DataMember: "MemberName"},
 					{Title: "핸드폰번호", DataMember: "PhoneNumber"},
 					{Title: "생일", DataMember: "Birth"},
 					{Title: "보유포인트", DataMember: "TotalPoint", Alignment: AlignFar},
+					{Title: "방문 횟수", DataMember: "VisitCount"},
 					{Title: "가입일", DataMember: "CreateDate", Width: 150},
 					{Title: "최근방문일", DataMember: "UpdateDate", Width: 150},
 				},
 				Model: model,
 				OnSelectedIndexesChanged: func() {
 					// 에러..?
-					fmt.Printf("SelectedIndexes: %v\n", tv.SelectedIndexes())
-					var index []int
-					index = tv.SelectedIndexes()
-					fmt.Println(model.Value(index[0], 0), model.Value(index[0], 2))
-					memberIdLE.SetText(fmt.Sprintf("%v", model.Value(index[0], 0)))
-					memberNameLE.SetText(fmt.Sprintf("%v", model.Value(index[0], 1)))
-					phonenumLE.SetText(fmt.Sprintf("%v", model.Value(index[0], 2)))
-					birthLE.SetText(fmt.Sprintf("%v", model.Value(index[0], 3)))
-					pointLE.SetText(fmt.Sprintf("%v", model.Value(index[0], 4)))
-					countLE.SetText(fmt.Sprintf("%v", model.Value(index[0], 5)))
-					cdtLE.SetText(fmt.Sprintf("%v", model.Value(index[0], 6)))
-					udtLE.SetText(fmt.Sprintf("%v", model.Value(index[0], 7)))
+					index := tv.SelectedIndexes()
+					fmt.Println("클릭한 인덱스 : ", tv.SelectedIndexes())
+					if len(index) > 0 {
+						memberIdLE.SetText(fmt.Sprintf("%v", model.Value(index[0], 0)))
+						memberNameLE.SetText(fmt.Sprintf("%v", model.Value(index[0], 1)))
+						phonenumLE.SetText(fmt.Sprintf("%v", model.Value(index[0], 2)))
+						birthLE.SetText(fmt.Sprintf("%v", model.Value(index[0], 3)))
+						pointLE.SetText(fmt.Sprintf("%v", model.Value(index[0], 4)))
+						countLE.SetText(fmt.Sprintf("%v", model.Value(index[0], 5)))
+						cdtLE.SetText(fmt.Sprintf("%v", model.Value(index[0], 6)))
+						udtLE.SetText(fmt.Sprintf("%v", model.Value(index[0], 7)))
+					}
 				},
 			},
 		},
@@ -242,6 +312,13 @@ func newMemberPage(parent walk.Container) (Page, error) {
 	return p, nil
 }
 
+func tvReloading(model *MembersModel, search string, tv *walk.TableView, tvResultLabel *walk.Label) *MembersModel {
+	model = NewMembersModel(search)
+	tv.SetModel(model)
+	tvResultLabel.SetText(strconv.Itoa(model.RowCount()))
+	return model
+}
+
 type MembersModel struct {
 	walk.TableModelBase
 	walk.SorterBase
@@ -250,9 +327,9 @@ type MembersModel struct {
 	members    []*dto.MemberDto
 }
 
-func NewMembersModel() *MembersModel {
+func NewMembersModel(search string) *MembersModel {
 	m := new(MembersModel)
-	m.ResetRows()
+	m.ResetRows(search)
 	return m
 }
 
@@ -338,13 +415,27 @@ func (m *MembersModel) Sort(col int, order walk.SortOrder) error {
 	return m.SorterBase.Sort(col, order)
 }
 
-func (m *MembersModel) ResetRows() {
+func (m *MembersModel) ResetRows(search string) {
 	var err error
 	var memberList []dto.MemberDto
-	if memberList, err = dbconn.SelectMembersOrderByGrade(); err != nil {
-		panic(err.Error())
+	if search != "" {
+		if memberList, err = dbconn.SelectMemberSearch(search); err != nil {
+			panic(err.Error())
+		} else {
+			fmt.Println("=============> SelectMemberSearch() 호출")
+			if len(memberList) <= 0 {
+				MsgBox("검색 에러", "검색 결과가 없습니다.")
+			}
+		}
+	} else {
+		if memberList, err = dbconn.SelectMembersDto(); err != nil {
+			panic(err.Error())
+		} else {
+			fmt.Println("=============> SelectMembersDto() 호출")
+		}
 	}
-	m.members = make([]*dto.MemberDto, len(memberList))
+	listLen := len(memberList)
+	m.members = make([]*dto.MemberDto, listLen)
 	for i := range memberList {
 		m.members[i] = &dto.MemberDto{
 			MemberId:    memberList[i].MemberId,

@@ -17,6 +17,7 @@ func newSalesPage(parent walk.Container) (Page, error) {
 	p := new(SalesPage)
 	var tv *walk.TableView
 	var startDate, endDate string
+	var startDateSearchDE, endDateSearchDE *walk.DateEdit
 	startDate = "2017-01-01"
 	endDate = "2024-01-31"
 	model := NewRevenuesModel(startDate, endDate)
@@ -72,11 +73,18 @@ func newSalesPage(parent walk.Container) (Page, error) {
 					Label{
 						Text: "검색 : ",
 					},
-					DateEdit{},
+					DateEdit{
+						AssignTo: &startDateSearchDE,
+						OnDateChanged: func() {
+							fmt.Println()
+						},
+					},
 					Label{
 						Text: " ~ ",
 					},
-					DateEdit{},
+					DateEdit{
+						AssignTo: &endDateSearchDE,
+					},
 					PushButton{
 						Text: "검색",
 						OnClicked: func() {

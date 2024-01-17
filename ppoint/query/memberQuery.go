@@ -6,7 +6,7 @@ import (
 	"ppoint/utils"
 )
 
-func (dbc *DbConfig) CreateMember(member *types.Member) (int, error) {
+func (dbc *DbConfig) CreateMember(member *dto.MemberAddDto) (int, error) {
 	result, err := dbc.DbConnection.Exec("INSERT INTO `ppoint`.`member` (`member_name`, `phone_number`, `birth`) VALUES (?, ?, ?);", member.MemberName, member.PhoneNumber, member.Birth)
 	memberId, err := result.LastInsertId()
 	return int(memberId), err
@@ -51,16 +51,16 @@ func (dbc *DbConfig) SelectMemberByPhoneNumber(phoneNumber string) (*types.Membe
 	return &member, nil
 }
 
-func (dbc *DbConfig) SelectMemberSearch(search string) ([]types.Member, error) {
+func (dbc *DbConfig) SelectMemberSearch(search string) ([]dto.MemberDto, error) {
 	rows, err := dbc.DbConnection.Query("SELECT * FROM ppoint.member WHERE phone_number LIKE ? or member_name like ?;", "%"+search, "%"+search+"%")
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var members []types.Member
+	var members []dto.MemberDto
 	for rows.Next() {
-		var member types.Member
+		var member dto.MemberDto
 		if err = rows.Scan(&member.MemberId, &member.MemberName, &member.PhoneNumber, &member.Birth, &member.TotalPoint, &member.VisitCount, &member.CreateDate, &member.UpdateDate); err != nil {
 			return nil, err
 		}
@@ -80,8 +80,8 @@ func (dbc *DbConfig) SelectMemberByMemberId(memberId int) (*dto.MemberDto, error
 	return &member, nil
 }
 
-func (dbc *DbConfig) SelectMembersOrderByGrade() ([]dto.MemberDto, error) {
-	rows, err := dbc.DbConnection.Query("SELECT member_id, member_name, phone_number, birth, total_point, visit_count, create_date, update_date FROM `ppoint`.`member` order by  member_name")
+func (dbc *DbConfig) SelectMembersDto() ([]dto.MemberDto, error) {
+	rows, err := dbc.DbConnection.Query("SELECT member_id, member_name, phone_number, birth, total_point, visit_count, create_date, update_date FROM `ppoint`.`member`")
 	if err != nil {
 		return nil, err
 	}
