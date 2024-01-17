@@ -95,7 +95,7 @@ func newMemberPage(parent walk.Container) (Page, error) {
 									LineEdit{
 										AssignTo: &phonenumLE,
 										ReadOnly: true,
-										Text:     Bind("PhoneNumber", Regexp{Pattern: "010([0-9]{7,8}$)"}, SelRequired{}),
+										Text:     Bind("PhoneNumber", Regexp{Pattern: "^01([0|1|6|7|8|9])-([0-9]{3,4})-([0-9]{4})$"}, SelRequired{}),
 									},
 								},
 							},
@@ -434,8 +434,7 @@ func (m *MembersModel) ResetRows(search string) {
 			fmt.Println("=============> SelectMembersDto() 호출")
 		}
 	}
-	listLen := len(memberList)
-	m.members = make([]*dto.MemberDto, listLen)
+	m.members = make([]*dto.MemberDto, len(memberList))
 	for i := range memberList {
 		m.members[i] = &dto.MemberDto{
 			MemberId:    memberList[i].MemberId,

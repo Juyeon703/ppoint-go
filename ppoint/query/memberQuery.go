@@ -17,8 +17,8 @@ func (dbc *DbConfig) UpdateMemberByPhoneNumber(id int, newphoneNumber, newName s
 	return err
 }
 
-func (dbc *DbConfig) UpdateMemberByPoint(id, updatePoint int) error {
-	_, err := dbc.DbConnection.Exec("UPDATE `ppoint`.`member` SET total_point=?, update_date=? WHERE member_id=?", updatePoint, utils.CurrentTime(), id)
+func (dbc *DbConfig) UpdateMemberByPoint(id, changePoint int) error {
+	_, err := dbc.DbConnection.Exec("UPDATE `ppoint`.`member` SET total_point=total_point+?, visit_count=visit_count + 1, update_date=? WHERE member_id=?", changePoint, utils.CurrentTime(), id)
 	return err
 }
 

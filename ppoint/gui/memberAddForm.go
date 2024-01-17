@@ -6,12 +6,14 @@ import (
 	. "github.com/lxn/walk/declarative"
 	"log"
 	"ppoint/dto"
+	"time"
 )
 
 func RunMemberAddDialog(owner walk.Form, member *dto.MemberAddDto) (int, error) {
 	var dlg *walk.Dialog
 	var db *walk.DataBinder
 	var acceptPB, cancelPB *walk.PushButton
+	var dateEditor = new(walk.DateEdit)
 
 	return Dialog{
 		AssignTo:      &dlg,
@@ -43,7 +45,7 @@ func RunMemberAddDialog(owner walk.Form, member *dto.MemberAddDto) (int, error) 
 						TextAlignment: AlignFar,
 					},
 					LineEdit{
-						Text:          Bind("PhoneNumber", Regexp{Pattern: "010([0-9]{7,8}$)"}, SelRequired{}),
+						Text:          Bind("PhoneNumber", Regexp{Pattern: "^01([0|1|6|7|8|9])-([0-9]{3,4})-([0-9]{4})$"}, SelRequired{}),
 						TextAlignment: AlignCenter,
 					},
 					Label{
@@ -51,8 +53,12 @@ func RunMemberAddDialog(owner walk.Form, member *dto.MemberAddDto) (int, error) 
 						TextAlignment: AlignFar,
 					},
 					// DateEdit
-					LineEdit{
-						Text: Bind("Birth", Regexp{Pattern: "(19[0-9][0-9]|20[0-9][0-9])-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])$"}),
+					DateEdit{
+						AssignTo: &dateEditor,
+						Date:     Bind("Birth"),
+						OnBoundsChanged: func() {
+							dateEditor.SetDate(time.Now().Add(-time.Duration(72000) * time.Hour))
+						},
 					},
 				},
 			},
