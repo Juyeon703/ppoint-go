@@ -211,6 +211,7 @@ func newMemberPage(parent walk.Container) (Page, error) {
 											updateBtn.SetText(updateTitle)
 											selectBtn.SetText(selectTitle)
 											model = tvReloading(model, "", tv, tvResultLabel)
+											MsgBox("수정 완료", "회원 정보가 변경되었습니다.")
 										}
 									}
 								},

@@ -21,7 +21,10 @@ func newPointPage(parent walk.Container) (Page, error) {
 	var searchMember, memberNameLE, phoneNumberLE, birthLE, udtLE *walk.LineEdit
 	var memberIdNE, pointNE, countNE, salesNE, subPointNE, beforePointNE, afterPointNE, fixedSalesNE, totalSalesNE, totalPointNE, addPointNE *walk.NumberEdit
 	var payTypeRBtn *walk.GroupBox
+	var radioCardBtn, radioCashBtn *walk.RadioButton
+	var clickedPT = types.Card
 	revenue := new(dto.RevenueAddDto)
+	revenue = &dto.RevenueAddDto{PayType: types.Card}
 
 	if err := (Composite{
 		AssignTo: &p.Composite,
@@ -64,7 +67,7 @@ func newPointPage(parent walk.Container) (Page, error) {
 												} else if cmd == walk.DlgCmdOK {
 													memberInfoClear(memberNameLE, phoneNumberLE, birthLE, udtLE, memberIdNE,
 														pointNE, countNE, beforePointNE, afterPointNE, totalSalesNE, totalPointNE)
-													revenueInfoClear(salesNE, subPointNE, fixedSalesNE, addPointNE)
+													clickedPT = revenueInfoClear(salesNE, subPointNE, fixedSalesNE, addPointNE, radioCardBtn, radioCashBtn)
 													fmt.Println("====회원 등록=====")
 													fmt.Println(addMember)
 													newMember := new(dto.MemberDto)
@@ -264,7 +267,7 @@ func newPointPage(parent walk.Container) (Page, error) {
 									PushButton{
 										Text: "초기화",
 										OnClicked: func() {
-											revenueInfoClear(salesNE, subPointNE, fixedSalesNE, addPointNE)
+											clickedPT = revenueInfoClear(salesNE, subPointNE, fixedSalesNE, addPointNE, radioCardBtn, radioCashBtn)
 										},
 									},
 								},
@@ -285,7 +288,7 @@ func newPointPage(parent walk.Container) (Page, error) {
 										Value:    Bind("Sales", SelRequired{}),
 										Suffix:   " 원",
 										OnValueChanged: func() {
-											revenueInfoCalc(salesNE, subPointNE, fixedSalesNE, addPointNE, beforePointNE, afterPointNE)
+											revenueInfoCalc(clickedPT, salesNE, subPointNE, fixedSalesNE, addPointNE, beforePointNE, afterPointNE)
 										},
 									},
 								},
@@ -296,9 +299,18 @@ func newPointPage(parent walk.Container) (Page, error) {
 								Layout:     HBox{},
 								DataMember: "PayType",
 								AssignTo:   &payTypeRBtn,
+								OnBoundsChanged: func() {
+									radioCardBtn.SetChecked(true)
+								},
 								Buttons: []RadioButton{
-									{Text: "카드", Value: types.Card},
-									{Text: "현금", Value: types.Cash},
+									{Text: "카드", AssignTo: &radioCardBtn, Value: types.Card, OnClicked: func() {
+										clickedPT = types.Card
+										revenueInfoCalc(clickedPT, salesNE, subPointNE, fixedSalesNE, addPointNE, beforePointNE, afterPointNE)
+									}},
+									{Text: "현금", AssignTo: &radioCashBtn, Value: types.Cash, OnClicked: func() {
+										clickedPT = types.Cash
+										revenueInfoCalc(clickedPT, salesNE, subPointNE, fixedSalesNE, addPointNE, beforePointNE, afterPointNE)
+									}},
 								},
 							},
 							Composite{
@@ -312,7 +324,7 @@ func newPointPage(parent walk.Container) (Page, error) {
 										Value:    Bind("SubPoint"),
 										Suffix:   " p",
 										OnValueChanged: func() {
-											revenueInfoCalc(salesNE, subPointNE, fixedSalesNE, addPointNE, beforePointNE, afterPointNE)
+											revenueInfoCalc(clickedPT, salesNE, subPointNE, fixedSalesNE, addPointNE, beforePointNE, afterPointNE)
 										},
 									},
 								},
@@ -392,8 +404,7 @@ func newPointPage(parent walk.Container) (Page, error) {
 											countNE.SetValue(countNE.Value() + 1)
 											beforePointNE.SetValue(afterPointNE.Value())
 											udtLE.SetText(utils.CurrentTime())
-											revenueInfoClear(salesNE, subPointNE, fixedSalesNE, addPointNE)
-											// 라디오버튼 초기화..? /////////////////////////////////////////////////////////////////////////////////////////
+											clickedPT = revenueInfoClear(salesNE, subPointNE, fixedSalesNE, addPointNE, radioCardBtn, radioCashBtn)
 											MsgBox("결제 완료", "포인트 적립이 완료되었습니다.")
 										}
 									}
@@ -430,18 +441,25 @@ func memberInfoClear(memberNameLE, phoneNumberLE, birthLE, udtLE *walk.LineEdit,
 	totalPointNE.SetValue(0)
 }
 
-func revenueInfoClear(salesNE, subPointNE, fixedSalesNE, addPointNE *walk.NumberEdit) {
+func revenueInfoClear(salesNE, subPointNE, fixedSalesNE, addPointNE *walk.NumberEdit, radioCardBtn, radioCashBtn *walk.RadioButton) string {
 	salesNE.SetValue(0)
 	subPointNE.SetValue(0)
 	fixedSalesNE.SetValue(0)
 	addPointNE.SetValue(0)
+	radioCardBtn.SetChecked(true)
+	radioCashBtn.SetChecked(false)
+	return types.Card
 }
 
-func revenueInfoCalc(salesNE, subPointNE, fixedSalesNE, addPointNE, beforePointNE, afterPointNE *walk.NumberEdit) {
+func revenueInfoCalc(clickedPT string, salesNE, subPointNE, fixedSalesNE, addPointNE, beforePointNE, afterPointNE *walk.NumberEdit) {
+	creditValue := cardSV
+	if clickedPT == types.Cash {
+		creditValue = cashSV
+	}
 	fixedSalesNE.SetValue(salesNE.Value() - subPointNE.Value())
 	if subPointNE.Value() == 0 {
-		addPointNE.SetValue(salesNE.Value() * float64(cardSV) / 100)
-		afterPointNE.SetValue(beforePointNE.Value() + (salesNE.Value() * float64(cardSV) / 100))
+		addPointNE.SetValue(salesNE.Value() * float64(creditValue) / 100)
+		afterPointNE.SetValue(beforePointNE.Value() + (salesNE.Value() * float64(creditValue) / 100))
 	} else {
 		addPointNE.SetValue(0)
 		afterPointNE.SetValue(beforePointNE.Value() - subPointNE.Value())
