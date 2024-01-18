@@ -9,12 +9,14 @@ import (
 
 func RevenueAdd(dbconn *query.DbConfig, revenueDto *dto.RevenueAddDto) error {
 	var err error
-	var setting = new(types.Setting)
+	var result int
 	var revenue = new(types.Revenue)
 	var changePoint int
-
+	if revenueDto.MemberId <= 0 {
+		return err
+	}
 	fmt.Println("===SelectSettingByPayType() 호출")
-	if setting, err = dbconn.SelectSettingByPayType(revenueDto.PayType); err != nil {
+	if result, err = dbconn.SelectSettingByPayType(revenueDto.PayType); err != nil {
 		return err
 	}
 	revenue.MemberId = revenueDto.MemberId
@@ -22,7 +24,7 @@ func RevenueAdd(dbconn *query.DbConfig, revenueDto *dto.RevenueAddDto) error {
 	revenue.SubPoint = revenueDto.SubPoint
 	revenue.PayType = revenueDto.PayType
 	if revenueDto.SubPoint == 0 {
-		changePoint = revenueDto.Sales * setting.SettingValue / 100
+		changePoint = revenueDto.Sales * result / 100
 		revenue.AddPoint = changePoint
 		revenue.FixedSales = revenueDto.Sales
 	} else {

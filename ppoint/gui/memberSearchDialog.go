@@ -8,10 +8,14 @@ import (
 	"strconv"
 )
 
-func RunMemberSearchDialog(owner walk.Form, memberList []dto.MemberDto, memberNameLE, phoneNumberLE, birthLE, udtLE *walk.LineEdit, memberIdNE, pointNE, countNE *walk.NumberEdit) (int, error) {
+func RunMemberSearchDialog(owner walk.Form, memberList []dto.MemberDto,
+	memberNameLE, phoneNumberLE, birthLE, udtLE *walk.LineEdit,
+	memberIdNE, pointNE, countNE, beforePointNE, afterPointNE, totalSalesNE, totalPointNE *walk.NumberEdit) (int, error) {
 	var dlg *walk.Dialog
 	var acceptPB, cancelPB *walk.PushButton
 	var tv *walk.TableView
+	var total = new(dto.MemberSumSalesDto)
+	var err error
 	model := NewSearchMembersModel(memberList)
 
 	return Dialog{
@@ -50,20 +54,32 @@ func RunMemberSearchDialog(owner walk.Form, memberList []dto.MemberDto, memberNa
 						Text:     "OK",
 						OnClicked: func() {
 							index := tv.SelectedIndexes()
-							fmt.Println("클릭한 인덱스 : ", index, fmt.Sprintf("%v", model.Value(index[0], 0)), fmt.Sprintf("%v", model.Value(index[0], 1)))
-							if len(index) > 0 {
+							if len(index) <= 0 {
+								MsgBox("에러", "선택한 회원이 없습니다.")
+							} else {
+								fmt.Println("클릭한 인덱스 : ", index, fmt.Sprintf("%v",
+									model.Value(index[0], 0)), fmt.Sprintf("%v", model.Value(index[0], 1)))
 								memberIdFl, _ := strconv.ParseFloat(fmt.Sprintf("%v", model.Value(index[0], 0)), 64)
 								memberIdNE.SetValue(memberIdFl)
+								fmt.Println("=============> SelectTotalSalesByMember() 호출")
+								if total, err = dbconn.SelectTotalSalesByMember(int(memberIdFl)); err != nil {
+									fmt.Println(total)
+									fmt.Println("=======err=========================") /////////////////////////////////////////////////////////////////
+								}
+								totalSalesNE.SetValue(float64(total.TotalSales))
+								totalPointNE.SetValue(float64(total.TotalPoint))
 								memberNameLE.SetText(fmt.Sprintf("%v", model.Value(index[0], 1)))
 								phoneNumberLE.SetText(fmt.Sprintf("%v", model.Value(index[0], 2)))
 								birthLE.SetText(fmt.Sprintf("%v", model.Value(index[0], 3)))
 								pointFL, _ := strconv.ParseFloat(fmt.Sprintf("%v", model.Value(index[0], 4)), 64)
 								pointNE.SetValue(pointFL)
-								countFL, _ := strconv.ParseFloat(fmt.Sprintf("%v", model.Value(index[0], 4)), 64)
+								beforePointNE.SetValue(pointFL)
+								afterPointNE.SetValue(pointFL)
+								countFL, _ := strconv.ParseFloat(fmt.Sprintf("%v", model.Value(index[0], 5)), 64)
 								countNE.SetValue(countFL)
 								udtLE.SetText(fmt.Sprintf("%v", model.Value(index[0], 7)))
+								dlg.Accept()
 							}
-							dlg.Accept()
 						},
 					},
 					PushButton{

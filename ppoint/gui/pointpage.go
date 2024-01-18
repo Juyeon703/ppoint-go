@@ -7,24 +7,19 @@ import (
 	"log"
 	"ppoint/dto"
 	"ppoint/service"
+	"ppoint/types"
+	"ppoint/utils"
 )
 
 type PointPage struct {
 	*walk.Composite
 }
 
-/*
-VSpacer{
-	ColumnSpan: 2,
-	Size:       8,
-},
-*/
-
 func newPointPage(parent walk.Container) (Page, error) {
 	p := new(PointPage)
 	var ppdb *walk.DataBinder
 	var searchMember, memberNameLE, phoneNumberLE, birthLE, udtLE *walk.LineEdit
-	var memberIdNE, pointNE, countNE, salesNE, subPointNE *walk.NumberEdit
+	var memberIdNE, pointNE, countNE, salesNE, subPointNE, beforePointNE, afterPointNE, fixedSalesNE, totalSalesNE, totalPointNE, addPointNE *walk.NumberEdit
 	var payTypeRBtn *walk.GroupBox
 	revenue := new(dto.RevenueAddDto)
 
@@ -63,22 +58,44 @@ func newPointPage(parent walk.Container) (Page, error) {
 											fmt.Println("=============> SelectMemberSearch() 호출")
 											if len(memberList) <= 0 {
 												MsgBox("검색 결과 없음", "검색 결과가 없습니다.\n신규 회원을 등록해주세요.")
-												searchMember.SetText("")
-
-												// 신규 회원 등록====================================== 구현 중
-
-											} else { // 검색 결과 있을 시 새로운 창 호출
-												if cmd, err := RunMemberSearchDialog(winMain, memberList, memberNameLE, phoneNumberLE, birthLE, udtLE, memberIdNE, pointNE, countNE); err != nil {
+												addMember := new(dto.MemberAddDto)
+												if cmd, err := RunMemberAddDialog(winMain, addMember); err != nil {
 													log.Print(err)
 												} else if cmd == walk.DlgCmdOK {
-													fmt.Println("====회원 검색 창 호출 확인 버튼=====")
-													fmt.Println("======>", memberIdNE.Value())
+													memberInfoClear(memberNameLE, phoneNumberLE, birthLE, udtLE, memberIdNE,
+														pointNE, countNE, beforePointNE, afterPointNE, totalSalesNE, totalPointNE)
+													revenueInfoClear(salesNE, subPointNE, fixedSalesNE, addPointNE)
+													fmt.Println("====회원 등록=====")
+													fmt.Println(addMember)
+													newMember := new(dto.MemberDto)
+													if newMember, err = dbconn.SelectMemberByPhoneAndName(addMember.PhoneNumber, addMember.MemberName); err != nil {
+														panic(err)
+													}
+													memberIdNE.SetValue(float64(newMember.MemberId))
+													memberNameLE.SetText(newMember.MemberName)
+													phoneNumberLE.SetText(newMember.PhoneNumber)
+													birthLE.SetText(newMember.Birth)
+													udtLE.SetText(newMember.UpdateDate)
+												}
+												searchMember.SetText("")
+											} else { // 검색 결과 있을 시 새로운 창 호출
+												if cmd, err := RunMemberSearchDialog(winMain, memberList, memberNameLE,
+													phoneNumberLE, birthLE, udtLE, memberIdNE, pointNE, countNE, beforePointNE,
+													afterPointNE, totalSalesNE, totalPointNE); err != nil {
+													log.Print(err)
+												} else if cmd == walk.DlgCmdOK {
+													fmt.Println("==선택한 회원 번호====>", memberIdNE.Value())
 													searchMember.SetText("")
-													// 누적 매출 같은거 가져오기 ============================= 구현 중
 												}
 											}
 										}
 									}
+								},
+							},
+							PushButton{
+								Text: "초기화",
+								OnClicked: func() {
+									searchMember.SetText("")
 								},
 							},
 						},
@@ -93,8 +110,20 @@ func newPointPage(parent walk.Container) (Page, error) {
 						Layout:  VBox{},
 						MaxSize: Size{Width: 300, Height: 1000},
 						Children: []Widget{
-							Label{
-								Text: "조회 고객",
+							Composite{
+								Layout: HBox{},
+								Children: []Widget{
+									Label{
+										Text: "조회 고객",
+									},
+									PushButton{
+										Text: "초기화",
+										OnClicked: func() {
+											memberInfoClear(memberNameLE, phoneNumberLE, birthLE, udtLE, memberIdNE,
+												pointNE, countNE, beforePointNE, afterPointNE, totalSalesNE, totalPointNE)
+										},
+									},
+								},
 							},
 							Composite{
 								Layout: HBox{},
@@ -136,10 +165,10 @@ func newPointPage(parent walk.Container) (Page, error) {
 								Layout: HBox{},
 								Children: []Widget{
 									Label{
-										Text: "누적 결제 금액 : ",
+										Text: "누적 매출 금액 : ",
 									},
 									NumberEdit{
-										//AssignTo: &,
+										AssignTo: &totalSalesNE,
 										ReadOnly: true,
 										Suffix:   " 원",
 									},
@@ -152,20 +181,7 @@ func newPointPage(parent walk.Container) (Page, error) {
 										Text: "누적 적립 포인트 : ",
 									},
 									NumberEdit{
-										//AssignTo: &,
-										ReadOnly: true,
-										Suffix:   " p",
-									},
-								},
-							},
-							Composite{
-								Layout: HBox{},
-								Children: []Widget{
-									Label{
-										Text: "누적 사용 포인트 : ",
-									},
-									NumberEdit{
-										//AssignTo: &,
+										AssignTo: &totalPointNE,
 										ReadOnly: true,
 										Suffix:   " p",
 									},
@@ -213,13 +229,13 @@ func newPointPage(parent walk.Container) (Page, error) {
 								Layout: HBox{},
 								Children: []Widget{
 									PushButton{
-										Text: "등록",
+										Text: "수정",
 										OnClicked: func() {
 
 										},
 									},
 									PushButton{
-										Text: "수정",
+										Text: "취소",
 										OnClicked: func() {
 
 										},
@@ -239,8 +255,19 @@ func newPointPage(parent walk.Container) (Page, error) {
 							ErrorPresenter: ToolTipErrorPresenter{},
 						},
 						Children: []Widget{
-							Label{
-								Text: "결제",
+							Composite{
+								Layout: HBox{},
+								Children: []Widget{
+									Label{
+										Text: "결제",
+									},
+									PushButton{
+										Text: "초기화",
+										OnClicked: func() {
+											revenueInfoClear(salesNE, subPointNE, fixedSalesNE, addPointNE)
+										},
+									},
+								},
 							},
 							NumberEdit{
 								AssignTo: &memberIdNE,
@@ -257,6 +284,9 @@ func newPointPage(parent walk.Container) (Page, error) {
 										AssignTo: &salesNE,
 										Value:    Bind("Sales", SelRequired{}),
 										Suffix:   " 원",
+										OnValueChanged: func() {
+											revenueInfoCalc(salesNE, subPointNE, fixedSalesNE, addPointNE, beforePointNE, afterPointNE)
+										},
 									},
 								},
 							},
@@ -267,8 +297,8 @@ func newPointPage(parent walk.Container) (Page, error) {
 								DataMember: "PayType",
 								AssignTo:   &payTypeRBtn,
 								Buttons: []RadioButton{
-									{Text: "카드", Value: "카드"},
-									{Text: "현금", Value: "현금"},
+									{Text: "카드", Value: types.Card},
+									{Text: "현금", Value: types.Cash},
 								},
 							},
 							Composite{
@@ -279,8 +309,11 @@ func newPointPage(parent walk.Container) (Page, error) {
 									},
 									NumberEdit{
 										AssignTo: &subPointNE,
-										Value:    Bind("SubPoint"), //Range{0, pointNE.Value()}
+										Value:    Bind("SubPoint"),
 										Suffix:   " p",
+										OnValueChanged: func() {
+											revenueInfoCalc(salesNE, subPointNE, fixedSalesNE, addPointNE, beforePointNE, afterPointNE)
+										},
 									},
 								},
 							},
@@ -291,7 +324,20 @@ func newPointPage(parent walk.Container) (Page, error) {
 										Text: "적립 전 포인트 : ",
 									},
 									NumberEdit{
-										//AssignTo: &,
+										AssignTo: &beforePointNE,
+										ReadOnly: true,
+										Suffix:   " p",
+									},
+								},
+							},
+							Composite{
+								Layout: HBox{},
+								Children: []Widget{
+									Label{
+										Text: "적립 포인트 : ",
+									},
+									NumberEdit{
+										AssignTo: &addPointNE,
 										ReadOnly: true,
 										Suffix:   " p",
 									},
@@ -304,7 +350,7 @@ func newPointPage(parent walk.Container) (Page, error) {
 										Text: "적립 후 포인트 : ",
 									},
 									NumberEdit{
-										//AssignTo: &,
+										AssignTo: &afterPointNE,
 										ReadOnly: true,
 										Suffix:   " p",
 									},
@@ -317,7 +363,7 @@ func newPointPage(parent walk.Container) (Page, error) {
 										Text: "결제 금액 : ",
 									},
 									NumberEdit{
-										//AssignTo: &,
+										AssignTo: &fixedSalesNE,
 										ReadOnly: true,
 										Suffix:   " 원",
 									},
@@ -334,14 +380,20 @@ func newPointPage(parent walk.Container) (Page, error) {
 											return
 										}
 										fmt.Println(revenue)
-										if revenue.Sales > 0 {
+										if revenue.Sales <= 0 || revenue.SubPoint > int(pointNE.Value()) {
+											MsgBox("error", "error") //////////////////////////////////////////////////////////////////////////
+										} else {
 											if err := service.RevenueAdd(dbconn, revenue); err != nil {
 												panic(err)
 											}
-											memberInfoClear(memberNameLE, phoneNumberLE, birthLE, udtLE, memberIdNE, pointNE, countNE)
-											revenueInfoClear(salesNE, subPointNE)
-											// 라디오버튼 초기화..?
-											// 고객 정보는 초기화 안하고 포인트 적립 후 정보 보여주면 좋을지도?
+											totalSalesNE.SetValue(totalSalesNE.Value() + salesNE.Value())
+											totalPointNE.SetValue(totalPointNE.Value() + addPointNE.Value())
+											pointNE.SetValue(afterPointNE.Value())
+											countNE.SetValue(countNE.Value() + 1)
+											beforePointNE.SetValue(afterPointNE.Value())
+											udtLE.SetText(utils.CurrentTime())
+											revenueInfoClear(salesNE, subPointNE, fixedSalesNE, addPointNE)
+											// 라디오버튼 초기화..? /////////////////////////////////////////////////////////////////////////////////////////
 											MsgBox("결제 완료", "포인트 적립이 완료되었습니다.")
 										}
 									}
@@ -363,7 +415,8 @@ func newPointPage(parent walk.Container) (Page, error) {
 	return p, nil
 }
 
-func memberInfoClear(memberNameLE, phoneNumberLE, birthLE, udtLE *walk.LineEdit, memberIdNE, pointNE, countNE *walk.NumberEdit) {
+func memberInfoClear(memberNameLE, phoneNumberLE, birthLE, udtLE *walk.LineEdit,
+	memberIdNE, pointNE, countNE, beforePointNE, afterPointNE, totalSalesNE, totalPointNE *walk.NumberEdit) {
 	memberNameLE.SetText("")
 	phoneNumberLE.SetText("")
 	birthLE.SetText("")
@@ -371,9 +424,26 @@ func memberInfoClear(memberNameLE, phoneNumberLE, birthLE, udtLE *walk.LineEdit,
 	memberIdNE.SetValue(0)
 	pointNE.SetValue(0)
 	countNE.SetValue(0)
+	beforePointNE.SetValue(0)
+	afterPointNE.SetValue(0)
+	totalSalesNE.SetValue(0)
+	totalPointNE.SetValue(0)
 }
 
-func revenueInfoClear(salesNE, subPointNE *walk.NumberEdit) {
+func revenueInfoClear(salesNE, subPointNE, fixedSalesNE, addPointNE *walk.NumberEdit) {
 	salesNE.SetValue(0)
 	subPointNE.SetValue(0)
+	fixedSalesNE.SetValue(0)
+	addPointNE.SetValue(0)
+}
+
+func revenueInfoCalc(salesNE, subPointNE, fixedSalesNE, addPointNE, beforePointNE, afterPointNE *walk.NumberEdit) {
+	fixedSalesNE.SetValue(salesNE.Value() - subPointNE.Value())
+	if subPointNE.Value() == 0 {
+		addPointNE.SetValue(salesNE.Value() * float64(cardSV) / 100)
+		afterPointNE.SetValue(beforePointNE.Value() + (salesNE.Value() * float64(cardSV) / 100))
+	} else {
+		addPointNE.SetValue(0)
+		afterPointNE.SetValue(beforePointNE.Value() - subPointNE.Value())
+	}
 }

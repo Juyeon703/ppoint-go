@@ -41,9 +41,9 @@ func (dbc *DbConfig) SelectMembers() ([]types.Member, error) {
 	return members, nil
 }
 
-func (dbc *DbConfig) SelectMemberByPhoneNumber(phoneNumber string) (*types.Member, error) {
-	var member types.Member
-	err := dbc.DbConnection.QueryRow("SELECT * FROM ppoint.member WHERE phone_number=?", phoneNumber).
+func (dbc *DbConfig) SelectMemberByPhoneAndName(phoneNumber string, memberName string) (*dto.MemberDto, error) {
+	var member dto.MemberDto
+	err := dbc.DbConnection.QueryRow("SELECT * FROM ppoint.member WHERE phone_number=? AND member_name=?", phoneNumber, memberName).
 		Scan(&member.MemberId, &member.MemberName, &member.PhoneNumber, &member.Birth, &member.TotalPoint, &member.VisitCount, &member.CreateDate, &member.UpdateDate)
 	if err != nil {
 		return nil, err

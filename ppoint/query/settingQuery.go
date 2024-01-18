@@ -34,12 +34,12 @@ func (dbc *DbConfig) SelectSettings() ([]types.Setting, error) {
 	return settings, nil
 }
 
-func (dbc *DbConfig) SelectSettingByPayType(payType string) (*types.Setting, error) {
-	var setting types.Setting
-	err := dbc.DbConnection.QueryRow("SELECT * FROM ppoint.setting WHERE setting_type='결제 방법' And setting_name=?", payType).
-		Scan(&setting.SettingId, &setting.SettingType, &setting.SettingName, &setting.SettingValue, &setting.SettingDescription)
+func (dbc *DbConfig) SelectSettingByPayType(payType string) (int, error) {
+	var result int
+	err := dbc.DbConnection.QueryRow("SELECT setting_value FROM ppoint.setting WHERE setting_type='결제 방법' And setting_name=?", payType).
+		Scan(&result)
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
-	return &setting, nil
+	return result, nil
 }

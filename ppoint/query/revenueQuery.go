@@ -1,6 +1,7 @@
 package query
 
 import (
+	"ppoint/dto"
 	"ppoint/types"
 )
 
@@ -69,12 +70,12 @@ func (dbc *DbConfig) SelectRevenuesByCustomDate(startDate, endDate string) ([]ty
 	return revenues, nil
 }
 
-// 실제 사용금액으로 할건지,, 총 결제금액으로 할건지
-//func (dbc *DbConfig) SelectTotalSalesByMember(memberId int) (*dto.MemberSalesDto, error) {
-//	var total dto.MemberSalesDto
-//	err := dbc.DbConnection.QueryRow("SELECT SUM(fixed_sales), member.grade_id, grade.grade_name FROM ppoint.revenue join ppoint.member on revenue.member_id = member.member_id join grade on member.grade_id = grade.grade_id WHERE revenue.member_id=?", memberId).Scan(&total.TotalSales, &total.GradeId, &total.GradeName)
-//	if err != nil {
-//		return nil, err
-//	}
-//	return &total, nil
-//}
+func (dbc *DbConfig) SelectTotalSalesByMember(memberId int) (*dto.MemberSumSalesDto, error) {
+	var total dto.MemberSumSalesDto
+	err := dbc.DbConnection.QueryRow("SELECT SUM(Sales), SUM(add_point) FROM ppoint.revenue WHERE revenue.member_id=?", memberId).
+		Scan(&total.TotalSales, &total.TotalPoint)
+	if err != nil {
+		return &total, err
+	}
+	return &total, nil
+}

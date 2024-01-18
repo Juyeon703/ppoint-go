@@ -2,9 +2,11 @@ package gui
 
 import (
 	"bytes"
+	"fmt"
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
 	"ppoint/query"
+	"ppoint/types"
 )
 
 type AppMainWindow struct {
@@ -13,17 +15,26 @@ type AppMainWindow struct {
 
 // MultiPageMainWindow 최상위 메인
 var winMain *AppMainWindow
-
 var dbconn *query.DbConfig
 var titleWidth, titleHeight = 1000, 800
+var cashSV, cardSV int
 
 func MainPage(DbConf *query.DbConfig) {
 	dbconn = DbConf
 	walk.Resources.SetRootDirPath("img")
 	var err error
-	//var titleWidth, titleHeight = 500, 500
 
 	winMain = new(AppMainWindow)
+
+	fmt.Println("=============> SelectSettingByPayType() 호출")
+	if cashSV, err = dbconn.SelectSettingByPayType(types.Cash); err != nil {
+		panic(err)
+	}
+	fmt.Println("=============> SelectSettingByPayType() 호출")
+	if cardSV, err = dbconn.SelectSettingByPayType(types.Card); err != nil {
+		panic(err)
+	}
+	fmt.Println("현금 적립 %", cashSV, "카드 적립 %", cardSV)
 
 	//multiple page main
 	var multiPageMainWindow *MultiPageMainWindow
