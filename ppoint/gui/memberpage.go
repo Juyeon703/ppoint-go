@@ -6,6 +6,8 @@ import (
 	. "github.com/lxn/walk/declarative"
 	"log"
 	"ppoint/dto"
+	"ppoint/service"
+	"ppoint/utils"
 	"sort"
 	"strconv"
 )
@@ -20,9 +22,14 @@ func newMemberPage(parent walk.Container) (Page, error) {
 	var mudb *walk.DataBinder
 	var memberIdLE, memberNameLE, phonenumLE, birthLE, pointLE, countLE, cdtLE, udtLE, mpSearchLE *walk.LineEdit
 	var tvResultLabel *walk.Label
-	var mpSearchBtn, creditBtn *walk.PushButton
+	var mpSearchBtn, updateBtn, selectBtn *walk.PushButton
 	var updateMember = new(dto.MemberUpdateDto)
 	model := NewMembersModel("")
+	var selectedMember = new(isExistMember)
+	const updateTitle = "수정"
+	const okTitle = "확인"
+	const cancelTitle = "취소"
+	const selectTitle = "매출 이력 조회"
 
 	if err := (Composite{
 		AssignTo: &p.Composite,
@@ -70,6 +77,7 @@ func newMemberPage(parent walk.Container) (Page, error) {
 									LineEdit{
 										AssignTo: &memberIdLE,
 										ReadOnly: true,
+										Text:     Bind("MemberId", SelRequired{}),
 									},
 								},
 							},
@@ -163,61 +171,68 @@ func newMemberPage(parent walk.Container) (Page, error) {
 								},
 							},
 							PushButton{
-								Text: "수정",
+								Text:     updateTitle,
+								AssignTo: &updateBtn,
 								OnClicked: func() {
 									if memberIdLE.Text() != "" {
-										memberNameLE.SetReadOnly(false)
-										phonenumLE.SetReadOnly(false)
-										birthLE.SetReadOnly(false)
-										pointLE.SetReadOnly(false)
-										countLE.SetReadOnly(false)
-									}
-
-									//member := new(MDto)
-									//if cmd, err := RunMemberEditDialog(winMain, member); err != nil {
-									//	fmt.Println("====err=====")
-									//	log.Print(err)
-									//} else if cmd == walk.DlgCmdOK {
-									//	fmt.Println("====수정 완료=====")
-									//	//outTE.SetText(fmt.Sprintf("%+v", animal))
-									//}
-								},
-							},
-							PushButton{
-								AssignTo: &creditBtn,
-								Text:     "결제",
-								OnClicked: func() {
-
-								},
-							},
-							PushButton{
-								Text: "매출 이력 조회",
-								OnClicked: func() {
-
-								},
-							},
-							PushButton{
-								Text: "OK",
-								OnClicked: func() {
-									if !memberNameLE.ReadOnly() {
-										if err := mudb.Submit(); err != nil {
-											log.Print(err)
-											return
+										if updateBtn.Text() == updateTitle {
+											memberNameLE.SetReadOnly(false)
+											phonenumLE.SetReadOnly(false)
+											birthLE.SetReadOnly(false)
+											pointLE.SetReadOnly(false)
+											countLE.SetReadOnly(false)
+											updateBtn.SetText(okTitle)
+											selectBtn.SetText(cancelTitle)
+										} else if updateBtn.Text() == okTitle && !memberNameLE.ReadOnly() {
+											if err := mudb.Submit(); err != nil {
+												log.Print(err)
+												return
+											}
+											if updateMember.TotalPoint != selectedMember.TotalPoint {
+												service.PointEdit(dbconn, updateMember.MemberId, selectedMember.TotalPoint, updateMember.TotalPoint)
+											}
+											fmt.Println("=============> UpdateMemberByDto() 호출")
+											if err := dbconn.UpdateMemberByDto(updateMember); err != nil {
+												panic(err)
+											}
+											fmt.Println("==> update정보 : ", mudb.DataSource())
+											selectedMember.MemberName = updateMember.MemberName
+											selectedMember.PhoneNumber = updateMember.PhoneNumber
+											selectedMember.Birth = updateMember.Birth
+											selectedMember.TotalPoint = updateMember.TotalPoint
+											selectedMember.VisitCount = updateMember.VisitCount
+											selectedMember.UpdateDate = utils.CurrentTime()
+											udtLE.SetText(utils.CurrentTime())
+											memberNameLE.SetReadOnly(true)
+											phonenumLE.SetReadOnly(true)
+											birthLE.SetReadOnly(true)
+											pointLE.SetReadOnly(true)
+											countLE.SetReadOnly(true)
+											updateBtn.SetText(updateTitle)
+											selectBtn.SetText(selectTitle)
+											model = tvReloading(model, "", tv, tvResultLabel)
 										}
-										fmt.Println(mudb.DataSource())
+									}
+								},
+							},
+							PushButton{
+								AssignTo: &selectBtn,
+								Text:     selectTitle,
+								OnClicked: func() {
+									if selectBtn.Text() == selectTitle {
+										///////////////////////////////////// 매출 이력 조회 구현 /////////////////////////////////
+									} else if selectBtn.Text() == cancelTitle {
+										fmt.Println("cancelBtn====")
+										memberInfoReloading(selectedMember, memberIdLE, memberNameLE, phonenumLE, birthLE, pointLE,
+											countLE, cdtLE, udtLE)
 										memberNameLE.SetReadOnly(true)
 										phonenumLE.SetReadOnly(true)
 										birthLE.SetReadOnly(true)
 										pointLE.SetReadOnly(true)
 										countLE.SetReadOnly(true)
+										updateBtn.SetText(updateTitle)
+										selectBtn.SetText(selectTitle)
 									}
-									//if memberId, err := dbconn.UpdateMemberByPhoneNumber(member); err != nil {
-									//	log.Print(err)
-									//	return
-									//} else {
-									//	fmt.Println("======> UpdateMemberByPhoneNumber() 호출")
-									//	fmt.Println("수정된 회원 번호 : ", memberId)
-									//}
 								},
 							},
 						},
@@ -289,14 +304,16 @@ func newMemberPage(parent walk.Container) (Page, error) {
 					index := tv.SelectedIndexes()
 					fmt.Println("클릭한 인덱스 : ", tv.SelectedIndexes())
 					if len(index) > 0 {
-						memberIdLE.SetText(fmt.Sprintf("%v", model.Value(index[0], 0)))
-						memberNameLE.SetText(fmt.Sprintf("%v", model.Value(index[0], 1)))
-						phonenumLE.SetText(fmt.Sprintf("%v", model.Value(index[0], 2)))
-						birthLE.SetText(fmt.Sprintf("%v", model.Value(index[0], 3)))
-						pointLE.SetText(fmt.Sprintf("%v", model.Value(index[0], 4)))
-						countLE.SetText(fmt.Sprintf("%v", model.Value(index[0], 5)))
-						cdtLE.SetText(fmt.Sprintf("%v", model.Value(index[0], 6)))
-						udtLE.SetText(fmt.Sprintf("%v", model.Value(index[0], 7)))
+						selectedMember.MemberId = fmt.Sprintf("%v", model.Value(index[0], 0))
+						selectedMember.MemberName = fmt.Sprintf("%v", model.Value(index[0], 1))
+						selectedMember.PhoneNumber = fmt.Sprintf("%v", model.Value(index[0], 2))
+						selectedMember.Birth = fmt.Sprintf("%v", model.Value(index[0], 3))
+						selectedMember.TotalPoint = fmt.Sprintf("%v", model.Value(index[0], 4))
+						selectedMember.VisitCount = fmt.Sprintf("%v", model.Value(index[0], 5))
+						selectedMember.CreateDate = fmt.Sprintf("%v", model.Value(index[0], 6))
+						selectedMember.UpdateDate = fmt.Sprintf("%v", model.Value(index[0], 7))
+						memberInfoReloading(selectedMember, memberIdLE, memberNameLE, phonenumLE, birthLE, pointLE,
+							countLE, cdtLE, udtLE)
 					}
 				},
 			},
@@ -310,6 +327,18 @@ func newMemberPage(parent walk.Container) (Page, error) {
 	}
 
 	return p, nil
+}
+
+func memberInfoReloading(selectedMember *isExistMember, memberIdLE, memberNameLE, phonenumLE, birthLE,
+	pointLE, countLE, cdtLE, udtLE *walk.LineEdit) {
+	memberIdLE.SetText(selectedMember.MemberId)
+	memberNameLE.SetText(selectedMember.MemberName)
+	phonenumLE.SetText(selectedMember.PhoneNumber)
+	birthLE.SetText(selectedMember.Birth)
+	pointLE.SetText(selectedMember.TotalPoint)
+	countLE.SetText(selectedMember.VisitCount)
+	cdtLE.SetText(selectedMember.CreateDate)
+	udtLE.SetText(selectedMember.UpdateDate)
 }
 
 func tvReloading(model *MembersModel, search string, tv *walk.TableView, tvResultLabel *walk.Label) *MembersModel {
@@ -452,4 +481,15 @@ func (m *MembersModel) ResetRows(search string) {
 	m.PublishRowsReset()
 
 	m.Sort(m.sortColumn, m.sortOrder)
+}
+
+type isExistMember struct {
+	MemberId    string
+	MemberName  string
+	PhoneNumber string
+	Birth       string
+	TotalPoint  string
+	VisitCount  string
+	CreateDate  string
+	UpdateDate  string
 }

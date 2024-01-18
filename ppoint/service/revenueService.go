@@ -5,6 +5,7 @@ import (
 	"ppoint/dto"
 	"ppoint/query"
 	"ppoint/types"
+	"strconv"
 )
 
 func RevenueAdd(dbconn *query.DbConfig, revenueDto *dto.RevenueAddDto) error {
@@ -43,5 +44,34 @@ func RevenueAdd(dbconn *query.DbConfig, revenueDto *dto.RevenueAddDto) error {
 	if err = dbconn.CreateRevenue(revenue); err != nil {
 		return err
 	}
+	return nil
+}
+
+func PointEdit(dbconn *query.DbConfig, memberId, originPoint, newPoint string) error {
+	var err error
+	var revenue = new(types.Revenue)
+
+	originP, _ := strconv.Atoi(originPoint)
+	newP, _ := strconv.Atoi(newPoint)
+	calc := originP - newP
+	if calc < 0 {
+		revenue.SubPoint = 0
+		revenue.AddPoint = -calc
+	} else if calc > 0 {
+		revenue.SubPoint = calc
+		revenue.AddPoint = 0
+	} else {
+		return err
+	}
+	result, _ := strconv.Atoi(memberId)
+	revenue.MemberId = result
+	revenue.Sales = 0
+	revenue.FixedSales = 0
+	revenue.PayType = "포인트 변경"
+	fmt.Println("===CreateRevenue() 호출")
+	if err = dbconn.CreateRevenue(revenue); err != nil {
+		return err
+	}
+
 	return nil
 }

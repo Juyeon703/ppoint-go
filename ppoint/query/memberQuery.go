@@ -12,8 +12,9 @@ func (dbc *DbConfig) CreateMember(member *dto.MemberAddDto) (int, error) {
 	return int(memberId), err
 }
 
-func (dbc *DbConfig) UpdateMemberByPhoneNumber(id int, newphoneNumber, newName string) error {
-	_, err := dbc.DbConnection.Exec("UPDATE `ppoint`.`member` SET phone_number=?, member_name=?, update_date=? WHERE member_id=?", newphoneNumber, newName, utils.CurrentTime(), id)
+func (dbc *DbConfig) UpdateMemberByDto(updateMember *dto.MemberUpdateDto) error {
+	_, err := dbc.DbConnection.Exec("UPDATE `ppoint`.`member` SET member_name=?, phone_number=?, birth=?, total_point=?, visit_count=?, update_date=? WHERE member_id=?",
+		updateMember.MemberName, updateMember.PhoneNumber, updateMember.Birth, updateMember.TotalPoint, updateMember.VisitCount, utils.CurrentTime(), updateMember.MemberId)
 	return err
 }
 
