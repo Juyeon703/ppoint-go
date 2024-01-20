@@ -34,9 +34,9 @@ func (dbc *DbConfig) SelectSettings() ([]types.Setting, error) {
 	return settings, nil
 }
 
-func (dbc *DbConfig) SelectSettingByPayType(payType string) (int, error) {
+func (dbc *DbConfig) SelectSettingBySettingType(settingType string) (int, error) {
 	var result int
-	err := dbc.DbConnection.QueryRow("SELECT setting_value FROM ppoint.setting WHERE setting_type='결제 방법' And setting_name=?", payType).
+	err := dbc.DbConnection.QueryRow("SELECT setting_value FROM ppoint.setting WHERE setting_type=?", settingType).
 		Scan(&result)
 	if err != nil {
 		return 0, err

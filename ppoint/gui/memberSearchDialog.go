@@ -5,11 +5,12 @@ import (
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
 	"ppoint/dto"
+	"ppoint/service"
 	"strconv"
 )
 
 func RunMemberSearchDialog(owner walk.Form, memberList []dto.MemberDto,
-	memberNameLE, phoneNumberLE, birthLE, udtLE *walk.LineEdit,
+	memberIdLE, memberNameLE, phoneNumberLE, birthLE, udtLE *walk.LineEdit,
 	memberIdNE, pointNE, countNE, beforePointNE, afterPointNE, totalSalesNE, totalPointNE *walk.NumberEdit) (int, error) {
 	var dlg *walk.Dialog
 	var acceptPB, cancelPB *walk.PushButton
@@ -61,10 +62,9 @@ func RunMemberSearchDialog(owner walk.Form, memberList []dto.MemberDto,
 									model.Value(index[0], 0)), fmt.Sprintf("%v", model.Value(index[0], 1)))
 								memberIdFl, _ := strconv.ParseFloat(fmt.Sprintf("%v", model.Value(index[0], 0)), 64)
 								memberIdNE.SetValue(memberIdFl)
-								fmt.Println("=============> SelectTotalSalesByMember() 호출")
-								if total, err = dbconn.SelectTotalSalesByMember(int(memberIdFl)); err != nil {
-									fmt.Println(total)
-									fmt.Println("=======err=========================") /////////////////////////////////////////////////////////////////
+								memberIdLE.SetText(fmt.Sprintf("%v", model.Value(index[0], 0)))
+								if total, err = service.FindSumSalesOfMember(dbconn, int(memberIdFl)); err != nil {
+									panic(err.Error())
 								}
 								totalSalesNE.SetValue(float64(total.TotalSales))
 								totalPointNE.SetValue(float64(total.TotalPoint))

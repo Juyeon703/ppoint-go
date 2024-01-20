@@ -20,12 +20,13 @@ func newMemberPage(parent walk.Container) (Page, error) {
 	p := new(MemberPage)
 	var tv *walk.TableView
 	var mudb *walk.DataBinder
-	var memberIdLE, memberNameLE, phonenumLE, birthLE, pointLE, countLE, cdtLE, udtLE, mpSearchLE *walk.LineEdit
+	var memberIdLE, memberNameLE, phonenumLE, birthLE, cdtLE, udtLE, mpSearchLE *walk.LineEdit
+	var pointNE, countNE *walk.NumberEdit
 	var tvResultLabel *walk.Label
 	var mpSearchBtn, updateBtn, selectBtn *walk.PushButton
 	var updateMember = new(dto.MemberUpdateDto)
 	model := NewMembersModel("")
-	var selectedMember = new(isExistMember)
+	var isExistMember = new(dto.IsExistMember)
 	const updateTitle = "수정"
 	const okTitle = "확인"
 	const cancelTitle = "취소"
@@ -126,10 +127,11 @@ func newMemberPage(parent walk.Container) (Page, error) {
 									Label{
 										Text: "보유 포인트 : ",
 									},
-									LineEdit{
-										AssignTo: &pointLE,
+									NumberEdit{
+										AssignTo: &pointNE,
 										ReadOnly: true,
-										Text:     Bind("TotalPoint", Regexp{Pattern: "^[0-9]*$"}),
+										Suffix:   " p",
+										Value:    Bind("TotalPoint"),
 									},
 								},
 							},
@@ -137,12 +139,13 @@ func newMemberPage(parent walk.Container) (Page, error) {
 								Layout: HBox{},
 								Children: []Widget{
 									Label{
-										Text: "방문 횟수 : ",
+										Text: "방문 횟수: ",
 									},
-									LineEdit{
-										AssignTo: &countLE,
+									NumberEdit{
+										AssignTo: &countNE,
 										ReadOnly: true,
-										Text:     Bind("VisitCount", Regexp{Pattern: "^[0-9]*$"}),
+										Suffix:   " 회",
+										Value:    Bind("VisitCount"),
 									},
 								},
 							},
@@ -179,39 +182,38 @@ func newMemberPage(parent walk.Container) (Page, error) {
 											memberNameLE.SetReadOnly(false)
 											phonenumLE.SetReadOnly(false)
 											birthLE.SetReadOnly(false)
-											pointLE.SetReadOnly(false)
-											countLE.SetReadOnly(false)
+											pointNE.SetReadOnly(false)
+											countNE.SetReadOnly(false)
 											updateBtn.SetText(okTitle)
 											selectBtn.SetText(cancelTitle)
 										} else if updateBtn.Text() == okTitle && !memberNameLE.ReadOnly() {
 											if err := mudb.Submit(); err != nil {
-												log.Print(err)
-												return
+												panic(err.Error())
 											}
-											if updateMember.TotalPoint != selectedMember.TotalPoint {
-												service.PointEdit(dbconn, updateMember.MemberId, selectedMember.TotalPoint, updateMember.TotalPoint)
+											if isExistMember.MemberName != updateMember.MemberName || isExistMember.PhoneNumber != updateMember.PhoneNumber ||
+												isExistMember.Birth != updateMember.Birth || isExistMember.TotalPoint != updateMember.TotalPoint ||
+												isExistMember.VisitCount != updateMember.VisitCount {
+												if err := service.MemberUpdate(dbconn, updateMember, isExistMember.TotalPoint); err != nil {
+													panic(err)
+												}
+												fmt.Println("==> update정보 : ", mudb.DataSource())
+												isExistMember.MemberName = updateMember.MemberName
+												isExistMember.PhoneNumber = updateMember.PhoneNumber
+												isExistMember.Birth = updateMember.Birth
+												isExistMember.TotalPoint = updateMember.TotalPoint
+												isExistMember.VisitCount = updateMember.VisitCount
+												isExistMember.UpdateDate = utils.CurrentTime()
+												udtLE.SetText(utils.CurrentTime())
+												memberNameLE.SetReadOnly(true)
+												phonenumLE.SetReadOnly(true)
+												birthLE.SetReadOnly(true)
+												pointNE.SetReadOnly(true)
+												countNE.SetReadOnly(true)
+												updateBtn.SetText(updateTitle)
+												selectBtn.SetText(selectTitle)
+												model = tvReloading(model, "", tv, tvResultLabel)
+												MsgBox("수정 완료", "회원 정보가 변경되었습니다.")
 											}
-											fmt.Println("=============> UpdateMemberByDto() 호출")
-											if err := dbconn.UpdateMemberByDto(updateMember); err != nil {
-												panic(err)
-											}
-											fmt.Println("==> update정보 : ", mudb.DataSource())
-											selectedMember.MemberName = updateMember.MemberName
-											selectedMember.PhoneNumber = updateMember.PhoneNumber
-											selectedMember.Birth = updateMember.Birth
-											selectedMember.TotalPoint = updateMember.TotalPoint
-											selectedMember.VisitCount = updateMember.VisitCount
-											selectedMember.UpdateDate = utils.CurrentTime()
-											udtLE.SetText(utils.CurrentTime())
-											memberNameLE.SetReadOnly(true)
-											phonenumLE.SetReadOnly(true)
-											birthLE.SetReadOnly(true)
-											pointLE.SetReadOnly(true)
-											countLE.SetReadOnly(true)
-											updateBtn.SetText(updateTitle)
-											selectBtn.SetText(selectTitle)
-											model = tvReloading(model, "", tv, tvResultLabel)
-											MsgBox("수정 완료", "회원 정보가 변경되었습니다.")
 										}
 									}
 								},
@@ -224,13 +226,12 @@ func newMemberPage(parent walk.Container) (Page, error) {
 										///////////////////////////////////// 매출 이력 조회 구현 /////////////////////////////////
 									} else if selectBtn.Text() == cancelTitle {
 										fmt.Println("cancelBtn====")
-										memberInfoReloading(selectedMember, memberIdLE, memberNameLE, phonenumLE, birthLE, pointLE,
-											countLE, cdtLE, udtLE)
+										memberInfoReloading(isExistMember, memberIdLE, memberNameLE, phonenumLE, birthLE, cdtLE, udtLE, pointNE, countNE)
 										memberNameLE.SetReadOnly(true)
 										phonenumLE.SetReadOnly(true)
 										birthLE.SetReadOnly(true)
-										pointLE.SetReadOnly(true)
-										countLE.SetReadOnly(true)
+										pointNE.SetReadOnly(true)
+										countNE.SetReadOnly(true)
 										updateBtn.SetText(updateTitle)
 										selectBtn.SetText(selectTitle)
 									}
@@ -305,16 +306,17 @@ func newMemberPage(parent walk.Container) (Page, error) {
 					index := tv.SelectedIndexes()
 					fmt.Println("클릭한 인덱스 : ", tv.SelectedIndexes())
 					if len(index) > 0 {
-						selectedMember.MemberId = fmt.Sprintf("%v", model.Value(index[0], 0))
-						selectedMember.MemberName = fmt.Sprintf("%v", model.Value(index[0], 1))
-						selectedMember.PhoneNumber = fmt.Sprintf("%v", model.Value(index[0], 2))
-						selectedMember.Birth = fmt.Sprintf("%v", model.Value(index[0], 3))
-						selectedMember.TotalPoint = fmt.Sprintf("%v", model.Value(index[0], 4))
-						selectedMember.VisitCount = fmt.Sprintf("%v", model.Value(index[0], 5))
-						selectedMember.CreateDate = fmt.Sprintf("%v", model.Value(index[0], 6))
-						selectedMember.UpdateDate = fmt.Sprintf("%v", model.Value(index[0], 7))
-						memberInfoReloading(selectedMember, memberIdLE, memberNameLE, phonenumLE, birthLE, pointLE,
-							countLE, cdtLE, udtLE)
+						isExistMember.MemberId = fmt.Sprintf("%v", model.Value(index[0], 0))
+						isExistMember.MemberName = fmt.Sprintf("%v", model.Value(index[0], 1))
+						isExistMember.PhoneNumber = fmt.Sprintf("%v", model.Value(index[0], 2))
+						isExistMember.Birth = fmt.Sprintf("%v", model.Value(index[0], 3))
+						pointTemp, _ := strconv.Atoi(fmt.Sprintf("%v", model.Value(index[0], 4)))
+						isExistMember.TotalPoint = pointTemp
+						countTemp, _ := strconv.Atoi(fmt.Sprintf("%v", model.Value(index[0], 5)))
+						isExistMember.VisitCount = countTemp
+						isExistMember.CreateDate = fmt.Sprintf("%v", model.Value(index[0], 6))
+						isExistMember.UpdateDate = fmt.Sprintf("%v", model.Value(index[0], 7))
+						memberInfoReloading(isExistMember, memberIdLE, memberNameLE, phonenumLE, birthLE, cdtLE, udtLE, pointNE, countNE)
 					}
 				},
 			},
@@ -330,16 +332,16 @@ func newMemberPage(parent walk.Container) (Page, error) {
 	return p, nil
 }
 
-func memberInfoReloading(selectedMember *isExistMember, memberIdLE, memberNameLE, phonenumLE, birthLE,
-	pointLE, countLE, cdtLE, udtLE *walk.LineEdit) {
-	memberIdLE.SetText(selectedMember.MemberId)
-	memberNameLE.SetText(selectedMember.MemberName)
-	phonenumLE.SetText(selectedMember.PhoneNumber)
-	birthLE.SetText(selectedMember.Birth)
-	pointLE.SetText(selectedMember.TotalPoint)
-	countLE.SetText(selectedMember.VisitCount)
-	cdtLE.SetText(selectedMember.CreateDate)
-	udtLE.SetText(selectedMember.UpdateDate)
+func memberInfoReloading(isExistMember *dto.IsExistMember, memberIdLE, memberNameLE, phonenumLE, birthLE,
+	cdtLE, udtLE *walk.LineEdit, pointNE, countNE *walk.NumberEdit) {
+	memberIdLE.SetText(isExistMember.MemberId)
+	memberNameLE.SetText(isExistMember.MemberName)
+	phonenumLE.SetText(isExistMember.PhoneNumber)
+	birthLE.SetText(isExistMember.Birth)
+	pointNE.SetValue(float64(isExistMember.TotalPoint))
+	countNE.SetValue(float64(isExistMember.VisitCount))
+	cdtLE.SetText(isExistMember.CreateDate)
+	udtLE.SetText(isExistMember.UpdateDate)
 }
 
 func tvReloading(model *MembersModel, search string, tv *walk.TableView, tvResultLabel *walk.Label) *MembersModel {
@@ -448,21 +450,12 @@ func (m *MembersModel) Sort(col int, order walk.SortOrder) error {
 func (m *MembersModel) ResetRows(search string) {
 	var err error
 	var memberList []dto.MemberDto
-	if search != "" {
-		if memberList, err = dbconn.SelectMemberSearch(search); err != nil {
-			panic(err.Error())
-		} else {
-			fmt.Println("=============> SelectMemberSearch() 호출")
-			if len(memberList) <= 0 {
-				MsgBox("검색 에러", "검색 결과가 없습니다.")
-			}
-		}
-	} else {
-		if memberList, err = dbconn.SelectMembersDto(); err != nil {
-			panic(err.Error())
-		} else {
-			fmt.Println("=============> SelectMembersDto() 호출")
-		}
+
+	if memberList, err = service.FindMemberList(dbconn, search); err != nil {
+		panic(err)
+	}
+	if search != "" && len(memberList) <= 0 {
+		MsgBox("검색 에러", "검색 결과가 없습니다.")
 	}
 	m.members = make([]*dto.MemberDto, len(memberList))
 	for i := range memberList {
@@ -482,15 +475,4 @@ func (m *MembersModel) ResetRows(search string) {
 	m.PublishRowsReset()
 
 	m.Sort(m.sortColumn, m.sortOrder)
-}
-
-type isExistMember struct {
-	MemberId    string
-	MemberName  string
-	PhoneNumber string
-	Birth       string
-	TotalPoint  string
-	VisitCount  string
-	CreateDate  string
-	UpdateDate  string
 }

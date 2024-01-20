@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
-	"ppoint/types"
+	"ppoint/dto"
+	"ppoint/service"
 	"sort"
 	"strconv"
 )
@@ -18,9 +19,10 @@ func newSalesPage(parent walk.Container) (Page, error) {
 	var tv *walk.TableView
 	var startDate, endDate string
 	var startDateSearchDE, endDateSearchDE *walk.DateEdit
+	var sumNEcc, sumNEcard, sumNEcash, sumNEaddP, sumNEsubP *walk.NumberEdit
 	startDate = "2017-01-01"
 	endDate = "2024-01-31"
-	model := NewRevenuesModel(startDate, endDate)
+	model := NewRevenuesModel(startDate, endDate, 0)
 
 	if err := (Composite{
 		AssignTo: &p.Composite,
@@ -48,12 +50,6 @@ func newSalesPage(parent walk.Container) (Page, error) {
 						},
 					},
 					PushButton{
-						Text: "주간별",
-						OnClicked: func() {
-
-						},
-					},
-					PushButton{
 						Text: "월별",
 						OnClicked: func() {
 
@@ -75,20 +71,23 @@ func newSalesPage(parent walk.Container) (Page, error) {
 					},
 					DateEdit{
 						AssignTo: &startDateSearchDE,
-						OnDateChanged: func() {
-							fmt.Println()
-						},
+						Date:     Bind("startDate"),
+						//OnDateChanged: func() {
+						//	fmt.Println()
+						//},
 					},
 					Label{
 						Text: " ~ ",
 					},
 					DateEdit{
 						AssignTo: &endDateSearchDE,
+						Date:     Bind("endDate"),
 					},
 					PushButton{
 						Text: "검색",
 						OnClicked: func() {
-
+							fmt.Println(startDateSearchDE.Date())
+							fmt.Println(endDateSearchDE.Date())
 						},
 					},
 					HSpacer{
@@ -114,7 +113,9 @@ func newSalesPage(parent walk.Container) (Page, error) {
 				MinSize:          Size{300, 300},
 				Columns: []TableViewColumn{
 					{Title: "번호", DataMember: "RevenueId"},
-					{Title: "고객번호", DataMember: "MemberId"},
+					{Title: "고객번호", DataMember: "MemberId", Hidden: true},
+					{Title: "이름", DataMember: "MemberName"},
+					{Title: "핸드폰번호", DataMember: "PhoneNumber"},
 					{Title: "결제금액", DataMember: "Sales", Alignment: AlignFar},
 					{Title: "사용포인트", DataMember: "SubPoint", Alignment: AlignFar},
 					{Title: "적립포인트", DataMember: "AddPoint", Alignment: AlignFar},
@@ -142,23 +143,38 @@ func newSalesPage(parent walk.Container) (Page, error) {
 							Label{
 								Text: "총 매출 금액(현금+카드)",
 							},
-							LineEdit{},
+							NumberEdit{
+								AssignTo: &sumNEcc,
+								Suffix:   " 원",
+							},
 							Label{
 								Text: "총 매출 금액(카드)",
 							},
-							LineEdit{},
+							NumberEdit{
+								AssignTo: &sumNEcard,
+								Suffix:   " 원",
+							},
 							Label{
 								Text: "총 매출 금액(현금)",
 							},
-							LineEdit{},
+							NumberEdit{
+								AssignTo: &sumNEcash,
+								Suffix:   " 원",
+							},
 							Label{
 								Text: "총 적립 포인트",
 							},
-							LineEdit{},
+							NumberEdit{
+								AssignTo: &sumNEaddP,
+								Suffix:   " p",
+							},
 							Label{
 								Text: "총 사용 포인트",
 							},
-							LineEdit{},
+							NumberEdit{
+								AssignTo: &sumNEsubP,
+								Suffix:   " p",
+							},
 						},
 					},
 				},
@@ -180,12 +196,12 @@ type RevenuesModel struct {
 	walk.SorterBase
 	sortColumn int
 	sortOrder  walk.SortOrder
-	revenues   []*types.Revenue
+	revenues   []*dto.RevenueDto
 }
 
-func NewRevenuesModel(startDate, endDate string) *RevenuesModel {
+func NewRevenuesModel(startDate, endDate string, memberId int) *RevenuesModel {
 	r := new(RevenuesModel)
-	r.ResetRows(startDate, endDate)
+	r.ResetRows(startDate, endDate, memberId)
 	return r
 }
 
@@ -204,21 +220,27 @@ func (r *RevenuesModel) Value(row, col int) interface{} {
 		return revenue.MemberId
 
 	case 2:
-		return revenue.Sales
+		return revenue.MemberName
 
 	case 3:
-		return revenue.SubPoint
+		return revenue.PhoneNumber
 
 	case 4:
-		return revenue.AddPoint
+		return revenue.Sales
 
 	case 5:
-		return revenue.FixedSales
+		return revenue.SubPoint
 
 	case 6:
-		return revenue.PayType
+		return revenue.AddPoint
 
 	case 7:
+		return revenue.FixedSales
+
+	case 8:
+		return revenue.PayType
+
+	case 9:
 		return revenue.CreateDate
 	}
 
@@ -247,21 +269,27 @@ func (r *RevenuesModel) Sort(col int, order walk.SortOrder) error {
 			return c(a.MemberId < b.MemberId)
 
 		case 2:
-			return c(a.Sales < b.Sales)
+			return c(a.MemberName < b.MemberName)
 
 		case 3:
-			return c(a.SubPoint < b.SubPoint)
+			return c(a.PhoneNumber < b.PhoneNumber)
 
 		case 4:
-			return c(a.AddPoint < b.AddPoint)
+			return c(a.Sales < b.Sales)
 
 		case 5:
-			return c(a.FixedSales < b.FixedSales)
+			return c(a.SubPoint < b.SubPoint)
 
 		case 6:
-			return c(a.PayType < b.PayType)
+			return c(a.AddPoint < b.AddPoint)
 
 		case 7:
+			return c(a.FixedSales < b.FixedSales)
+
+		case 8:
+			return c(a.PayType < b.PayType)
+
+		case 9:
 			return c(a.CreateDate < b.CreateDate)
 		}
 
@@ -271,23 +299,26 @@ func (r *RevenuesModel) Sort(col int, order walk.SortOrder) error {
 	return r.SorterBase.Sort(col, order)
 }
 
-func (r *RevenuesModel) ResetRows(startDate, endDate string) {
+func (r *RevenuesModel) ResetRows(startDate, endDate string, memberId int) {
 	var err error
-	var revenueList []types.Revenue
-	if revenueList, err = dbconn.SelectRevenuesByCustomDate(startDate, endDate); err != nil {
+	var revenueList []dto.RevenueDto
+
+	if revenueList, err = service.FindRevenueList(dbconn, startDate, endDate, memberId); err != nil {
 		panic(err.Error())
 	}
-	r.revenues = make([]*types.Revenue, len(revenueList))
+	r.revenues = make([]*dto.RevenueDto, len(revenueList))
 	for i := range revenueList {
-		r.revenues[i] = &types.Revenue{
-			RevenueId:  revenueList[i].RevenueId,
-			MemberId:   revenueList[i].MemberId,
-			Sales:      revenueList[i].Sales,
-			SubPoint:   revenueList[i].SubPoint,
-			AddPoint:   revenueList[i].AddPoint,
-			FixedSales: revenueList[i].FixedSales,
-			PayType:    revenueList[i].PayType,
-			CreateDate: revenueList[i].CreateDate,
+		r.revenues[i] = &dto.RevenueDto{
+			RevenueId:   revenueList[i].RevenueId,
+			MemberId:    revenueList[i].MemberId,
+			MemberName:  revenueList[i].MemberName,
+			PhoneNumber: revenueList[i].PhoneNumber,
+			Sales:       revenueList[i].Sales,
+			SubPoint:    revenueList[i].SubPoint,
+			AddPoint:    revenueList[i].AddPoint,
+			FixedSales:  revenueList[i].FixedSales,
+			PayType:     revenueList[i].PayType,
+			CreateDate:  revenueList[i].CreateDate,
 		}
 	}
 

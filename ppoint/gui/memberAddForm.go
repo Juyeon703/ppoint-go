@@ -1,11 +1,11 @@
 package gui
 
 import (
-	"fmt"
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
 	"log"
 	"ppoint/dto"
+	"ppoint/service"
 	"time"
 )
 
@@ -71,15 +71,12 @@ func RunMemberAddDialog(owner walk.Form, member *dto.MemberAddDto) (int, error) 
 						Text:     "OK",
 						OnClicked: func() {
 							if err := db.Submit(); err != nil {
+								panic(err)
 								log.Print(err)
 								return
 							}
-							if memberId, err := dbconn.CreateMember(member); err != nil {
-								log.Print(err)
-								return
-							} else {
-								fmt.Println("======> CreateMember() 호출")
-								fmt.Println("등록된 회원 번호 : ", memberId)
+							if err := service.MemberAdd(dbconn, member); err != nil {
+								panic(err.Error())
 							}
 							dlg.Accept()
 						},

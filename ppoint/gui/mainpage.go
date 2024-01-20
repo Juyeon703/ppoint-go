@@ -6,6 +6,7 @@ import (
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
 	"ppoint/query"
+	"ppoint/service"
 	"ppoint/types"
 )
 
@@ -26,12 +27,10 @@ func MainPage(DbConf *query.DbConfig) {
 
 	winMain = new(AppMainWindow)
 
-	fmt.Println("=============> SelectSettingByPayType() 호출")
-	if cashSV, err = dbconn.SelectSettingByPayType(types.Cash); err != nil {
+	if cashSV, err = service.FindSettingValue(dbconn, types.SettingCash); err != nil {
 		panic(err)
 	}
-	fmt.Println("=============> SelectSettingByPayType() 호출")
-	if cardSV, err = dbconn.SelectSettingByPayType(types.Card); err != nil {
+	if cardSV, err = service.FindSettingValue(dbconn, types.SettingCard); err != nil {
 		panic(err)
 	}
 	fmt.Println("현금 적립 %", cashSV, "카드 적립 %", cardSV)

@@ -9,6 +9,7 @@ import (
 	"ppoint/service"
 	"ppoint/types"
 	"ppoint/utils"
+	"strconv"
 )
 
 type PointPage struct {
@@ -17,14 +18,21 @@ type PointPage struct {
 
 func newPointPage(parent walk.Container) (Page, error) {
 	p := new(PointPage)
-	var ppdb *walk.DataBinder
-	var searchMember, memberNameLE, phoneNumberLE, birthLE, udtLE *walk.LineEdit
+	var ppdb, mudb *walk.DataBinder
+	var searchMember, memberIdLE, memberNameLE, phoneNumberLE, birthLE, udtLE *walk.LineEdit
 	var memberIdNE, pointNE, countNE, salesNE, subPointNE, beforePointNE, afterPointNE, fixedSalesNE, totalSalesNE, totalPointNE, addPointNE *walk.NumberEdit
 	var payTypeRBtn *walk.GroupBox
 	var radioCardBtn, radioCashBtn *walk.RadioButton
+	var updateBtn, cancelBtn *walk.PushButton
 	var clickedPT = types.Card
+	var newMember *dto.MemberDto
 	revenue := new(dto.RevenueAddDto)
 	revenue = &dto.RevenueAddDto{PayType: types.Card}
+	var updateMember = new(dto.MemberUpdateDto)
+	const updateTitle = "수정"
+	const okTitle = "확인"
+	var nameTemp, phoneTemp, birthTemp string
+	var pointTemp, countTemp float64
 
 	if err := (Composite{
 		AssignTo: &p.Composite,
@@ -55,26 +63,25 @@ func newPointPage(parent walk.Container) (Page, error) {
 										MsgBox("검색 에러", "검색어를 입력해주세요.")
 										return
 									} else {
-										if memberList, err := dbconn.SelectMemberSearch(searchMember.Text()); err != nil {
+										if memberList, err := service.FindMemberList(dbconn, searchMember.Text()); err != nil {
 											panic(err.Error())
 										} else {
-											fmt.Println("=============> SelectMemberSearch() 호출")
 											if len(memberList) <= 0 {
 												MsgBox("검색 결과 없음", "검색 결과가 없습니다.\n신규 회원을 등록해주세요.")
 												addMember := new(dto.MemberAddDto)
 												if cmd, err := RunMemberAddDialog(winMain, addMember); err != nil {
 													log.Print(err)
 												} else if cmd == walk.DlgCmdOK {
-													memberInfoClear(memberNameLE, phoneNumberLE, birthLE, udtLE, memberIdNE,
-														pointNE, countNE, beforePointNE, afterPointNE, totalSalesNE, totalPointNE)
+													memberInfoClear(memberIdLE, memberNameLE, phoneNumberLE, birthLE, udtLE,
+														memberIdNE, pointNE, countNE, beforePointNE, afterPointNE, totalSalesNE, totalPointNE)
 													clickedPT = revenueInfoClear(salesNE, subPointNE, fixedSalesNE, addPointNE, radioCardBtn, radioCashBtn)
 													fmt.Println("====회원 등록=====")
 													fmt.Println(addMember)
-													newMember := new(dto.MemberDto)
-													if newMember, err = dbconn.SelectMemberByPhoneAndName(addMember.PhoneNumber, addMember.MemberName); err != nil {
-														panic(err)
+													if newMember, err = service.FindMember(dbconn, addMember.MemberName, addMember.PhoneNumber); err != nil {
+														panic(err.Error())
 													}
 													memberIdNE.SetValue(float64(newMember.MemberId))
+													memberIdLE.SetText(strconv.Itoa(newMember.MemberId))
 													memberNameLE.SetText(newMember.MemberName)
 													phoneNumberLE.SetText(newMember.PhoneNumber)
 													birthLE.SetText(newMember.Birth)
@@ -82,12 +89,12 @@ func newPointPage(parent walk.Container) (Page, error) {
 												}
 												searchMember.SetText("")
 											} else { // 검색 결과 있을 시 새로운 창 호출
-												if cmd, err := RunMemberSearchDialog(winMain, memberList, memberNameLE,
+												if cmd, err := RunMemberSearchDialog(winMain, memberList, memberIdLE, memberNameLE,
 													phoneNumberLE, birthLE, udtLE, memberIdNE, pointNE, countNE, beforePointNE,
 													afterPointNE, totalSalesNE, totalPointNE); err != nil {
 													log.Print(err)
 												} else if cmd == walk.DlgCmdOK {
-													fmt.Println("==선택한 회원 번호====>", memberIdNE.Value())
+													fmt.Println("==선택한 회원 번호====>", memberIdLE.Text())
 													searchMember.SetText("")
 												}
 											}
@@ -112,6 +119,12 @@ func newPointPage(parent walk.Container) (Page, error) {
 						Border:  true,
 						Layout:  VBox{},
 						MaxSize: Size{Width: 300, Height: 1000},
+						DataBinder: DataBinder{
+							AssignTo:       &mudb,
+							Name:           "updateMember",
+							DataSource:     updateMember,
+							ErrorPresenter: ToolTipErrorPresenter{},
+						},
 						Children: []Widget{
 							Composite{
 								Layout: HBox{},
@@ -122,11 +135,20 @@ func newPointPage(parent walk.Container) (Page, error) {
 									PushButton{
 										Text: "초기화",
 										OnClicked: func() {
-											memberInfoClear(memberNameLE, phoneNumberLE, birthLE, udtLE, memberIdNE,
-												pointNE, countNE, beforePointNE, afterPointNE, totalSalesNE, totalPointNE)
+											if updateBtn.Text() == okTitle {
+												MsgBox("초기화 오류", "수정 중엔 초기화할 수 없습니다.")
+											} else {
+												memberInfoClear(memberIdLE, memberNameLE, phoneNumberLE, birthLE, udtLE,
+													memberIdNE, pointNE, countNE, beforePointNE, afterPointNE, totalSalesNE, totalPointNE)
+											}
 										},
 									},
 								},
+							},
+							LineEdit{
+								AssignTo: &memberIdLE,
+								Visible:  false,
+								Text:     Bind("MemberId", SelRequired{}),
 							},
 							Composite{
 								Layout: HBox{},
@@ -137,6 +159,7 @@ func newPointPage(parent walk.Container) (Page, error) {
 									LineEdit{
 										AssignTo: &memberNameLE,
 										ReadOnly: true,
+										Text:     Bind("MemberName", SelRequired{}),
 									},
 								},
 							},
@@ -149,6 +172,7 @@ func newPointPage(parent walk.Container) (Page, error) {
 									LineEdit{
 										AssignTo: &phoneNumberLE,
 										ReadOnly: true,
+										Text:     Bind("PhoneNumber", Regexp{Pattern: "^01([0|1|6|7|8|9])-([0-9]{3,4})-([0-9]{4})$"}, SelRequired{}),
 									},
 								},
 							},
@@ -161,6 +185,7 @@ func newPointPage(parent walk.Container) (Page, error) {
 									LineEdit{
 										AssignTo: &birthLE,
 										ReadOnly: true,
+										Text:     Bind("Birth", Regexp{Pattern: "(19[0-9][0-9]|20[0-9][0-9])-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])$"}),
 									},
 								},
 							},
@@ -200,6 +225,7 @@ func newPointPage(parent walk.Container) (Page, error) {
 										AssignTo: &pointNE,
 										ReadOnly: true,
 										Suffix:   " p",
+										Value:    Bind("TotalPoint"),
 									},
 								},
 							},
@@ -213,6 +239,7 @@ func newPointPage(parent walk.Container) (Page, error) {
 										AssignTo: &countNE,
 										ReadOnly: true,
 										Suffix:   " 회",
+										Value:    Bind("VisitCount"),
 									},
 								},
 							},
@@ -232,15 +259,69 @@ func newPointPage(parent walk.Container) (Page, error) {
 								Layout: HBox{},
 								Children: []Widget{
 									PushButton{
-										Text: "수정",
+										AssignTo: &updateBtn,
+										Text:     updateTitle,
 										OnClicked: func() {
-
+											if memberIdLE.Text() != "" {
+												if updateBtn.Text() == updateTitle {
+													nameTemp = memberNameLE.Text()
+													phoneTemp = phoneNumberLE.Text()
+													birthTemp = birthLE.Text()
+													pointTemp = pointNE.Value()
+													countTemp = countNE.Value()
+													memberNameLE.SetReadOnly(false)
+													phoneNumberLE.SetReadOnly(false)
+													birthLE.SetReadOnly(false)
+													pointNE.SetReadOnly(false)
+													countNE.SetReadOnly(false)
+													updateBtn.SetText(okTitle)
+													cancelBtn.SetVisible(true)
+												} else if updateBtn.Text() == okTitle && !memberNameLE.ReadOnly() {
+													if err := mudb.Submit(); err != nil {
+														panic(err.Error())
+													}
+													fmt.Println("==> update정보 : ", mudb.DataSource())
+													if nameTemp != updateMember.MemberName || phoneTemp != updateMember.PhoneNumber || birthTemp != updateMember.Birth ||
+														int(pointTemp) != updateMember.TotalPoint || int(countTemp) != updateMember.VisitCount {
+														if err := service.MemberUpdate(dbconn, updateMember, int(pointTemp)); err != nil {
+															panic(err)
+														}
+														udtLE.SetText(utils.CurrentTime())
+														memberNameLE.SetReadOnly(true)
+														phoneNumberLE.SetReadOnly(true)
+														birthLE.SetReadOnly(true)
+														pointNE.SetReadOnly(true)
+														countNE.SetReadOnly(true)
+														updateBtn.SetText(updateTitle)
+														cancelBtn.SetVisible(false)
+														MsgBox("수정 완료", "회원 정보가 변경되었습니다.")
+														beforePointNE.SetValue(float64(updateMember.TotalPoint))
+														afterPointNE.SetValue(float64(updateMember.TotalPoint))
+														clickedPT = revenueInfoClear(salesNE, subPointNE, fixedSalesNE, addPointNE, radioCardBtn, radioCashBtn)
+													}
+												}
+											}
 										},
 									},
 									PushButton{
-										Text: "취소",
+										AssignTo: &cancelBtn,
+										Text:     "취소",
+										Visible:  false,
 										OnClicked: func() {
-
+											if cancelBtn.Visible() {
+												memberNameLE.SetText(nameTemp)
+												phoneNumberLE.SetText(phoneTemp)
+												birthLE.SetText(birthTemp)
+												pointNE.SetValue(pointTemp)
+												countNE.SetValue(countTemp)
+												memberNameLE.SetReadOnly(true)
+												phoneNumberLE.SetReadOnly(true)
+												birthLE.SetReadOnly(true)
+												pointNE.SetReadOnly(true)
+												countNE.SetReadOnly(true)
+												updateBtn.SetText(updateTitle)
+												cancelBtn.SetVisible(false)
+											}
 										},
 									},
 								},
@@ -384,7 +465,7 @@ func newPointPage(parent walk.Container) (Page, error) {
 							PushButton{
 								Text: "확인/적립",
 								OnClicked: func() {
-									if memberIdNE.Value() == 0 {
+									if memberIdLE.Text() == "" {
 										MsgBox("선택된 회원 없음", "선택된 회원이 없습니다.")
 									} else {
 										if err := ppdb.Submit(); err != nil {
@@ -426,15 +507,16 @@ func newPointPage(parent walk.Container) (Page, error) {
 	return p, nil
 }
 
-func memberInfoClear(memberNameLE, phoneNumberLE, birthLE, udtLE *walk.LineEdit,
+func memberInfoClear(memberIdLE, memberNameLE, phoneNumberLE, birthLE, udtLE *walk.LineEdit,
 	memberIdNE, pointNE, countNE, beforePointNE, afterPointNE, totalSalesNE, totalPointNE *walk.NumberEdit) {
+	memberIdLE.SetText("")
 	memberNameLE.SetText("")
 	phoneNumberLE.SetText("")
 	birthLE.SetText("")
 	udtLE.SetText("")
-	memberIdNE.SetValue(0)
 	pointNE.SetValue(0)
 	countNE.SetValue(0)
+	memberIdNE.SetValue(0)
 	beforePointNE.SetValue(0)
 	afterPointNE.SetValue(0)
 	totalSalesNE.SetValue(0)
