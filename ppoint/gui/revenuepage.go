@@ -8,6 +8,7 @@ import (
 	"ppoint/service"
 	"sort"
 	"strconv"
+	"time"
 )
 
 type SalesPage struct {
@@ -17,12 +18,13 @@ type SalesPage struct {
 func newSalesPage(parent walk.Container) (Page, error) {
 	p := new(SalesPage)
 	var tv *walk.TableView
-	var startDate, endDate string
+	var datedb *walk.DataBinder
+	var tvResultLabel *walk.Label
 	var startDateSearchDE, endDateSearchDE *walk.DateEdit
 	var sumNEcc, sumNEcard, sumNEcash, sumNEaddP, sumNEsubP *walk.NumberEdit
-	startDate = "2017-01-01"
-	endDate = "2024-01-31"
-	model := NewRevenuesModel(startDate, endDate, 0)
+	var dateSearch = &SearchDate{Sdt: time.Now(), Edt: time.Now()}
+	model := NewRevenuesModel(dateSearch, moveId)
+	fmt.Println("매출 페이지", moveId)
 
 	if err := (Composite{
 		AssignTo: &p.Composite,
@@ -38,69 +40,74 @@ func newSalesPage(parent walk.Container) (Page, error) {
 						Text: "기간별 조회 :",
 					},
 					PushButton{
-						Text: "전체",
-						OnClicked: func() {
-
-						},
-					},
-					PushButton{
 						Text: "일별",
 						OnClicked: func() {
-
+							now := time.Now()
+							startDateSearchDE.SetDate(now)
+							endDateSearchDE.SetDate(now)
+							model = tvRevenueReloading(dateSearch, 0, tv, tvResultLabel, datedb)
 						},
 					},
 					PushButton{
 						Text: "월별",
 						OnClicked: func() {
-
+							now := time.Now()
+							startDateSearchDE.SetDate(time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.Local))
+							endDateSearchDE.SetDate(time.Date(now.Year(), now.Month()+1, 0, 0, 0, 0, 0, time.Local))
+							model = tvRevenueReloading(dateSearch, 0, tv, tvResultLabel, datedb)
 						},
 					},
 					PushButton{
 						Text: "년도별",
 						OnClicked: func() {
-
+							now := time.Now()
+							startDateSearchDE.SetDate(time.Date(now.Year(), 1, 1, 0, 0, 0, 0, time.Local))
+							endDateSearchDE.SetDate(time.Date(now.Year(), 12, 31, 0, 0, 0, 0, time.Local))
+							model = tvRevenueReloading(dateSearch, 0, tv, tvResultLabel, datedb)
 						},
 					},
 				},
 			},
 			Composite{
 				Layout: HBox{},
+				DataBinder: DataBinder{
+					AssignTo:   &datedb,
+					Name:       "dateSearch",
+					DataSource: dateSearch,
+				},
 				Children: []Widget{
 					Label{
 						Text: "검색 : ",
 					},
 					DateEdit{
 						AssignTo: &startDateSearchDE,
-						Date:     Bind("startDate"),
-						//OnDateChanged: func() {
-						//	fmt.Println()
-						//},
+						Date:     Bind("Sdt"),
+						OnBoundsChanged: func() {
+							startDateSearchDE.SetDate(dateSearch.Sdt)
+						},
 					},
 					Label{
 						Text: " ~ ",
 					},
 					DateEdit{
 						AssignTo: &endDateSearchDE,
-						Date:     Bind("endDate"),
+						Date:     Bind("Edt"),
+						OnBoundsChanged: func() {
+							endDateSearchDE.SetDate(dateSearch.Edt)
+						},
 					},
 					PushButton{
 						Text: "검색",
 						OnClicked: func() {
-							fmt.Println(startDateSearchDE.Date())
-							fmt.Println(endDateSearchDE.Date())
+							model = tvRevenueReloading(dateSearch, 0, tv, tvResultLabel, datedb)
 						},
 					},
 					HSpacer{
-						Size: 300,
+						Size: 400,
 					},
 					Label{
-						Text: "조회 기간 : " + startDate + " ~ " + endDate,
-					},
-					HSpacer{
-						Size: 50,
-					},
-					Label{
-						Text: "검색 수 : " + strconv.Itoa(model.RowCount()),
+						Text:     "검색 수 : " + strconv.Itoa(model.RowCount()),
+						AssignTo: &tvResultLabel,
 					},
 				},
 			},
@@ -146,6 +153,7 @@ func newSalesPage(parent walk.Container) (Page, error) {
 							NumberEdit{
 								AssignTo: &sumNEcc,
 								Suffix:   " 원",
+								ReadOnly: true,
 							},
 							Label{
 								Text: "총 매출 금액(카드)",
@@ -153,6 +161,7 @@ func newSalesPage(parent walk.Container) (Page, error) {
 							NumberEdit{
 								AssignTo: &sumNEcard,
 								Suffix:   " 원",
+								ReadOnly: true,
 							},
 							Label{
 								Text: "총 매출 금액(현금)",
@@ -160,6 +169,7 @@ func newSalesPage(parent walk.Container) (Page, error) {
 							NumberEdit{
 								AssignTo: &sumNEcash,
 								Suffix:   " 원",
+								ReadOnly: true,
 							},
 							Label{
 								Text: "총 적립 포인트",
@@ -167,6 +177,7 @@ func newSalesPage(parent walk.Container) (Page, error) {
 							NumberEdit{
 								AssignTo: &sumNEaddP,
 								Suffix:   " p",
+								ReadOnly: true,
 							},
 							Label{
 								Text: "총 사용 포인트",
@@ -174,6 +185,7 @@ func newSalesPage(parent walk.Container) (Page, error) {
 							NumberEdit{
 								AssignTo: &sumNEsubP,
 								Suffix:   " p",
+								ReadOnly: true,
 							},
 						},
 					},
@@ -191,6 +203,23 @@ func newSalesPage(parent walk.Container) (Page, error) {
 	return p, nil
 }
 
+type SearchDate struct {
+	Sdt time.Time
+	Edt time.Time
+}
+
+func tvRevenueReloading(dateSearch *SearchDate, memberId int, tv *walk.TableView, tvResultLabel *walk.Label, datedb *walk.DataBinder) *RevenuesModel {
+	if err := datedb.Submit(); err != nil {
+		panic(err)
+		return nil
+	}
+	fmt.Println("==> 검색 : ", datedb.DataSource())
+	model := NewRevenuesModel(dateSearch, memberId)
+	tv.SetModel(model)
+	tvResultLabel.SetText(strconv.Itoa(model.RowCount()))
+	return model
+}
+
 type RevenuesModel struct {
 	walk.TableModelBase
 	walk.SorterBase
@@ -199,9 +228,9 @@ type RevenuesModel struct {
 	revenues   []*dto.RevenueDto
 }
 
-func NewRevenuesModel(startDate, endDate string, memberId int) *RevenuesModel {
+func NewRevenuesModel(dateSearch *SearchDate, memberId int) *RevenuesModel {
 	r := new(RevenuesModel)
-	r.ResetRows(startDate, endDate, memberId)
+	r.ResetRows(dateSearch, memberId)
 	return r
 }
 
@@ -299,9 +328,12 @@ func (r *RevenuesModel) Sort(col int, order walk.SortOrder) error {
 	return r.SorterBase.Sort(col, order)
 }
 
-func (r *RevenuesModel) ResetRows(startDate, endDate string, memberId int) {
+func (r *RevenuesModel) ResetRows(dateSearch *SearchDate, memberId int) {
 	var err error
 	var revenueList []dto.RevenueDto
+
+	startDate := dateSearch.Sdt.Format("2006-01-02")
+	endDate := dateSearch.Edt.Format("2006-01-02")
 
 	if revenueList, err = service.FindRevenueList(dbconn, startDate, endDate, memberId); err != nil {
 		panic(err.Error())

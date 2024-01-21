@@ -2,16 +2,16 @@ package query
 
 import "ppoint/types"
 
-func (dbc *DbConfig) CreateSetting(settingName, settingValue string) error {
-	_, err := dbc.DbConnection.Exec("INSERT INTO `ppoint`.`setting` (`setting_name`, `setting_value`) VALUES (?, ?);", settingName, settingValue)
+func (dbc *DbConfig) CreateSetting(settingType, settingValue, settingDescription string) error {
+	_, err := dbc.DbConnection.Exec("INSERT INTO `ppoint`.`setting` (`setting_type`, `setting_value`, `setting_description`) VALUES (?, ?, ?);", settingType, settingValue, settingDescription)
 	return err
 }
-func (dbc *DbConfig) UpdateSettingById(id int, newName, newValue string) error {
-	_, err := dbc.DbConnection.Exec("UPDATE `ppoint`.`setting` SET setting_name=?, setting_value=? WHERE setting_id=?", newName, newValue, id)
+func (dbc *DbConfig) UpdateSettingById(settingType, newValue, newDescription string) error {
+	_, err := dbc.DbConnection.Exec("UPDATE `ppoint`.`setting` SET setting_value=?, setting_description=? WHERE setting_type=?", newValue, newDescription, settingType)
 	return err
 }
-func (dbc *DbConfig) DeleteSetting(id int) error {
-	_, err := dbc.DbConnection.Exec("DELETE FROM `ppoint`.`setting` WHERE setting_id=?;", id)
+func (dbc *DbConfig) DeleteSetting(settingType string) error {
+	_, err := dbc.DbConnection.Exec("DELETE FROM `ppoint`.`setting` WHERE setting_type=?;", settingType)
 	return err
 }
 
@@ -25,7 +25,7 @@ func (dbc *DbConfig) SelectSettings() ([]types.Setting, error) {
 	var settings []types.Setting
 	for rows.Next() {
 		var setting types.Setting
-		if err = rows.Scan(&setting.SettingId, &setting.SettingName, &setting.SettingValue); err != nil {
+		if err = rows.Scan(&setting.SettingType, &setting.SettingValue, &setting.SettingDescription); err != nil {
 			return nil, err
 		}
 		settings = append(settings, setting)
@@ -34,12 +34,12 @@ func (dbc *DbConfig) SelectSettings() ([]types.Setting, error) {
 	return settings, nil
 }
 
-func (dbc *DbConfig) SelectSettingBySettingType(settingType string) (int, error) {
-	var result int
+func (dbc *DbConfig) SelectSettingBySettingType(settingType string) (string, error) {
+	var result string
 	err := dbc.DbConnection.QueryRow("SELECT setting_value FROM ppoint.setting WHERE setting_type=?", settingType).
 		Scan(&result)
 	if err != nil {
-		return 0, err
+		return "", err
 	}
 	return result, nil
 }

@@ -21,6 +21,9 @@ func init() {
 	}
 	DbConf.DbConnection = dbConn
 
+	if err := DbConf.Update0PointMemberNoVisitFor3Month(); err != nil {
+		panic(err)
+	}
 }
 
 func main() {

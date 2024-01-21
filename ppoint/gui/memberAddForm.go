@@ -13,7 +13,7 @@ func RunMemberAddDialog(owner walk.Form, member *dto.MemberAddDto) (int, error) 
 	var dlg *walk.Dialog
 	var db *walk.DataBinder
 	var acceptPB, cancelPB *walk.PushButton
-	var dateEditor = new(walk.DateEdit)
+	var dateEditor *walk.DateEdit
 
 	return Dialog{
 		AssignTo:      &dlg,
@@ -52,12 +52,11 @@ func RunMemberAddDialog(owner walk.Form, member *dto.MemberAddDto) (int, error) 
 						Text:          "생일 : ",
 						TextAlignment: AlignFar,
 					},
-					// DateEdit
 					DateEdit{
 						AssignTo: &dateEditor,
 						Date:     Bind("Birth"),
 						OnBoundsChanged: func() {
-							dateEditor.SetDate(time.Now().Add(-time.Duration(72000) * time.Hour))
+							dateEditor.SetDate(time.Date(1970, 1, 1, 0, 0, 0, 0, time.Local))
 						},
 					},
 				},

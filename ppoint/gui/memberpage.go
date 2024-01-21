@@ -16,6 +16,8 @@ type MemberPage struct {
 	*walk.Composite
 }
 
+var moveId int
+
 func newMemberPage(parent walk.Container) (Page, error) {
 	p := new(MemberPage)
 	var tv *walk.TableView
@@ -51,7 +53,7 @@ func newMemberPage(parent walk.Container) (Page, error) {
 							} else if cmd == walk.DlgCmdOK {
 								fmt.Println("====회원 등록=====")
 								fmt.Println(addMember)
-								model = tvReloading(model, "", tv, tvResultLabel)
+								model = tvReloading("", tv, tvResultLabel)
 								tv.SetCurrentIndex(model.RowCount() - 1)
 							}
 						},
@@ -211,7 +213,7 @@ func newMemberPage(parent walk.Container) (Page, error) {
 												countNE.SetReadOnly(true)
 												updateBtn.SetText(updateTitle)
 												selectBtn.SetText(selectTitle)
-												model = tvReloading(model, "", tv, tvResultLabel)
+												model = tvReloading("", tv, tvResultLabel)
 												MsgBox("수정 완료", "회원 정보가 변경되었습니다.")
 											}
 										}
@@ -223,7 +225,18 @@ func newMemberPage(parent walk.Container) (Page, error) {
 								Text:     selectTitle,
 								OnClicked: func() {
 									if selectBtn.Text() == selectTitle {
-										///////////////////////////////////// 매출 이력 조회 구현 /////////////////////////////////
+										if memberIdLE.Text() != "" {
+											fmt.Println(winMain.currentAction)
+											moveId, _ = strconv.Atoi(isExistMember.MemberId)
+											fmt.Println("멤버페이지 이동 전", moveId)
+											////////////////////////////////////////////////////////////navTb 이상////////////////////////////////
+											if err := winMain.setCurrentAction(winMain.pageActions[2]); err != nil {
+												panic(err)
+											}
+											moveId = 0
+											fmt.Println("멤버페이지 이동 후", moveId)
+										}
+
 									} else if selectBtn.Text() == cancelTitle {
 										fmt.Println("cancelBtn====")
 										memberInfoReloading(isExistMember, memberIdLE, memberNameLE, phonenumLE, birthLE, cdtLE, udtLE, pointNE, countNE)
@@ -257,7 +270,7 @@ func newMemberPage(parent walk.Container) (Page, error) {
 							if mpSearchLE.Text() != "" {
 								// 이름, 폰 번호
 								fmt.Println("검색어 : ", mpSearchLE.Text())
-								model = tvReloading(model, mpSearchLE.Text(), tv, tvResultLabel)
+								model = tvReloading(mpSearchLE.Text(), tv, tvResultLabel)
 							}
 						},
 					},
@@ -267,7 +280,7 @@ func newMemberPage(parent walk.Container) (Page, error) {
 							if mpSearchLE.Text() != "" {
 								fmt.Println("==초기화==")
 								mpSearchLE.SetText("")
-								model = tvReloading(model, "", tv, tvResultLabel)
+								model = tvReloading("", tv, tvResultLabel)
 							}
 						},
 					},
@@ -344,8 +357,8 @@ func memberInfoReloading(isExistMember *dto.IsExistMember, memberIdLE, memberNam
 	udtLE.SetText(isExistMember.UpdateDate)
 }
 
-func tvReloading(model *MembersModel, search string, tv *walk.TableView, tvResultLabel *walk.Label) *MembersModel {
-	model = NewMembersModel(search)
+func tvReloading(search string, tv *walk.TableView, tvResultLabel *walk.Label) *MembersModel {
+	model := NewMembersModel(search)
 	tv.SetModel(model)
 	tvResultLabel.SetText(strconv.Itoa(model.RowCount()))
 	return model

@@ -23,6 +23,12 @@ func (dbc *DbConfig) UpdateMemberByPoint(id, changePoint int) error {
 	return err
 }
 
+// Update0PointMemberNoVisitFor3Month
+func (dbc *DbConfig) Update0PointMemberNoVisitFor3Month() error {
+	_, err := dbc.DbConnection.Exec("UPDATE ppoint.member SET total_point=0 WHERE update_date <= DATE_ADD(now(), INTERVAL -30 DAY)")
+	return err
+}
+
 func (dbc *DbConfig) SelectMembers() ([]types.Member, error) {
 	rows, err := dbc.DbConnection.Query("SELECT * FROM `ppoint`.`member`")
 	if err != nil {

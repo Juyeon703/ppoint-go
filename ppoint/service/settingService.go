@@ -3,14 +3,16 @@ package service
 import (
 	"fmt"
 	"ppoint/query"
+	"strconv"
 )
 
 func FindSettingValue(dbconn *query.DbConfig, settingType string) (int, error) {
 	var err error
-	var result int
+	var result string
 	if result, err = dbconn.SelectSettingBySettingType(settingType); err != nil {
 		return 0, err
 	}
+	temp, _ := strconv.Atoi(result)
 	fmt.Println("=============> SelectSettingByPayType() 호출")
-	return result, nil
+	return temp, nil
 }

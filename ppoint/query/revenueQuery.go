@@ -5,9 +5,9 @@ import (
 	"ppoint/types"
 )
 
-func (dbc *DbConfig) CreateRevenue(revenue *types.Revenue) error {
+func (dbc *DbConfig) CreateRevenue(memberId, sales, subPoint, addPoint, fixedSales int, payType string) error {
 	_, err := dbc.DbConnection.Exec("INSERT INTO `ppoint`.`revenue` (`member_id`, `sales`, `sub_point`, `add_point`, `fixed_sales`, `pay_type`) VALUES (?, ?, ?, ?, ?, ?);",
-		revenue.MemberId, revenue.Sales, revenue.SubPoint, revenue.AddPoint, revenue.FixedSales, revenue.PayType)
+		memberId, sales, subPoint, addPoint, fixedSales, payType)
 	return err
 }
 func (dbc *DbConfig) DeleteRevenue(id int) error {
