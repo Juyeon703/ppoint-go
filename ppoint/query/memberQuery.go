@@ -7,7 +7,7 @@ import (
 )
 
 func (dbc *DbConfig) CreateMember(member *dto.MemberAddDto) (int, error) {
-	result, err := dbc.DbConnection.Exec("INSERT INTO `ppoint`.`member` (`member_name`, `phone_number`, `birth`) VALUES (?, ?, ?);", member.MemberName, member.PhoneNumber, member.Birth)
+	result, err := dbc.DbConnection.Exec("INSERT INTO `ppoint`.`member` (`member_name`, `phone_number`, `birth`) VALUES (?, ?, ?);", member.MemberName, member.PhoneNumber, member.Birth.Format("2006-01-02"))
 	memberId, err := result.LastInsertId()
 	return int(memberId), err
 }
@@ -23,9 +23,9 @@ func (dbc *DbConfig) UpdateMemberByPoint(id, changePoint int) error {
 	return err
 }
 
-// Update0PointMemberNoVisitFor3Month
+// test 2일 -- 수정 필요
 func (dbc *DbConfig) Update0PointMemberNoVisitFor3Month() error {
-	_, err := dbc.DbConnection.Exec("UPDATE ppoint.member SET total_point=0 WHERE update_date <= DATE_ADD(now(), INTERVAL -30 DAY)")
+	_, err := dbc.DbConnection.Exec("UPDATE ppoint.member SET total_point=0 WHERE total_point != 0 and update_date <= DATE_ADD(now(), INTERVAL -2 DAY)")
 	return err
 }
 

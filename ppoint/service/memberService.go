@@ -71,3 +71,16 @@ func FindSumSalesOfMember(dbconn *query.DbConfig, memberId int) (*dto.MemberSumS
 
 	return result, nil
 }
+
+func ChangePointNoVisitFor3Month(dbconn *query.DbConfig) error {
+	var err error
+	if err = dbconn.CreateRevenueChangePointNoVisitFor3Month(); err != nil {
+		return err
+	}
+	fmt.Println("=============> CreateRevenueChangePointNoVisitFor3Month() 호출")
+	if err = dbconn.Update0PointMemberNoVisitFor3Month(); err != nil {
+		return err
+	}
+	fmt.Println("=============> Update0PointMemberNoVisitFor3Month() 호출")
+	return nil
+}

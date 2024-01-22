@@ -10,6 +10,13 @@ func (dbc *DbConfig) CreateRevenue(memberId, sales, subPoint, addPoint, fixedSal
 		memberId, sales, subPoint, addPoint, fixedSales, payType)
 	return err
 }
+
+// test 2일 -- 수정 필요
+func (dbc *DbConfig) CreateRevenueChangePointNoVisitFor3Month() error {
+	_, err := dbc.DbConnection.Exec("INSERT INTO `ppoint`.`revenue` (`member_id`, `sales`, `sub_point`, `add_point`, `fixed_sales`, `pay_type`) SELECT member_id, 0, total_point, 0, 0, '소멸' from ppoint.member where total_point != 0 and update_date <= DATE_ADD(now(), INTERVAL -2 DAY);")
+	return err
+}
+
 func (dbc *DbConfig) DeleteRevenue(id int) error {
 	_, err := dbc.DbConnection.Exec("DELETE FROM `ppoint`.`revenue` WHERE revenue_id=?;", id)
 	return err
@@ -98,4 +105,24 @@ func (dbc *DbConfig) SelectTotalSalesByMember(memberId int) (*dto.MemberSumSales
 		return &total, err
 	}
 	return &total, nil
+}
+
+func (dbc *DbConfig) SelectSumSalesPointByCustomDate(startDate, endDate string) (*dto.SumSalesPointDto, error) {
+	var result dto.SumSalesPointDto
+	err := dbc.DbConnection.QueryRow("SELECT SUM(Sales), SUM(IF(pay_type='카드', sales, 0)), SUM(IF(pay_type='현금', sales, 0)), SUM(add_point), SUM(sub_point) FROM ppoint.revenue WHERE date_format(create_date, '%Y-%m-%d') BETWEEN ? and ?", startDate, endDate).
+		Scan(&result.SumSales, &result.SumCard, &result.SumCash, &result.SumAddP, &result.SumSubP)
+	if err != nil {
+		return &result, err
+	}
+	return &result, nil
+}
+
+func (dbc *DbConfig) SelectSumSalesPointByMemberId(memberId int) (*dto.SumSalesPointDto, error) {
+	var result dto.SumSalesPointDto
+	err := dbc.DbConnection.QueryRow("SELECT SUM(Sales), SUM(IF(pay_type='카드', sales, 0)), SUM(IF(pay_type='현금', sales, 0)), SUM(add_point), SUM(sub_point) FROM ppoint.revenue WHERE member_id=?", memberId).
+		Scan(&result.SumSales, &result.SumCard, &result.SumCash, &result.SumAddP, &result.SumSubP)
+	if err != nil {
+		return &result, err
+	}
+	return &result, nil
 }

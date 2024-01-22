@@ -6,6 +6,7 @@ import (
 	"ppoint/db"
 	"ppoint/gui"
 	"ppoint/query"
+	"ppoint/service"
 )
 
 var DbConf *query.DbConfig
@@ -21,7 +22,8 @@ func init() {
 	}
 	DbConf.DbConnection = dbConn
 
-	if err := DbConf.Update0PointMemberNoVisitFor3Month(); err != nil {
+	// test 2일 -- 수정 필요
+	if err := service.ChangePointNoVisitFor3Month(DbConf); err != nil {
 		panic(err)
 	}
 }

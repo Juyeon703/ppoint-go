@@ -99,3 +99,24 @@ func FindRevenueList(dbconn *query.DbConfig, startDate, endDate string, memberId
 	fmt.Println(len(revenueList), startDate, endDate, memberId)
 	return revenueList, nil
 }
+
+func FindSumSalesPoint(dbconn *query.DbConfig, startDate, endDate string, memberId int) (*dto.SumSalesPointDto, error) {
+	var err error
+	var result *dto.SumSalesPointDto
+
+	if memberId != 0 {
+		if result, err = dbconn.SelectSumSalesPointByMemberId(memberId); err != nil {
+			return nil, err
+		} else {
+			fmt.Println("=============> SelectSumSalesPointByMemberId() 호출")
+		}
+	} else {
+		if result, err = dbconn.SelectSumSalesPointByCustomDate(startDate, endDate); err != nil {
+			return nil, err
+		} else {
+			fmt.Println("=============> SelectSumSalesPointByCustomDate() 호출")
+		}
+	}
+
+	return result, nil
+}

@@ -16,6 +16,7 @@ type SalesPage struct {
 }
 
 func newSalesPage(parent walk.Container) (Page, error) {
+	var err error
 	p := new(SalesPage)
 	var tv *walk.TableView
 	var datedb *walk.DataBinder
@@ -23,7 +24,13 @@ func newSalesPage(parent walk.Container) (Page, error) {
 	var startDateSearchDE, endDateSearchDE *walk.DateEdit
 	var sumNEcc, sumNEcard, sumNEcash, sumNEaddP, sumNEsubP *walk.NumberEdit
 	var dateSearch = &SearchDate{Sdt: time.Now(), Edt: time.Now()}
-	model := NewRevenuesModel(dateSearch, moveId)
+	dateNow := time.Now().Format("2006-01-02")
+	model := NewRevenuesModel(dateNow, dateNow, moveId)
+	var sumDto *dto.SumSalesPointDto
+	if sumDto, err = service.FindSumSalesPoint(dbconn, dateNow, dateNow, moveId); err != nil {
+		return nil, err
+	}
+
 	fmt.Println("매출 페이지", moveId)
 
 	if err := (Composite{
@@ -45,7 +52,7 @@ func newSalesPage(parent walk.Container) (Page, error) {
 							now := time.Now()
 							startDateSearchDE.SetDate(now)
 							endDateSearchDE.SetDate(now)
-							model = tvRevenueReloading(dateSearch, 0, tv, tvResultLabel, datedb)
+							model = tvRevenueReloading(dateSearch, 0, tv, tvResultLabel, datedb, sumNEcc, sumNEcard, sumNEcash, sumNEaddP, sumNEsubP)
 						},
 					},
 					PushButton{
@@ -54,7 +61,7 @@ func newSalesPage(parent walk.Container) (Page, error) {
 							now := time.Now()
 							startDateSearchDE.SetDate(time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.Local))
 							endDateSearchDE.SetDate(time.Date(now.Year(), now.Month()+1, 0, 0, 0, 0, 0, time.Local))
-							model = tvRevenueReloading(dateSearch, 0, tv, tvResultLabel, datedb)
+							model = tvRevenueReloading(dateSearch, 0, tv, tvResultLabel, datedb, sumNEcc, sumNEcard, sumNEcash, sumNEaddP, sumNEsubP)
 						},
 					},
 					PushButton{
@@ -63,7 +70,7 @@ func newSalesPage(parent walk.Container) (Page, error) {
 							now := time.Now()
 							startDateSearchDE.SetDate(time.Date(now.Year(), 1, 1, 0, 0, 0, 0, time.Local))
 							endDateSearchDE.SetDate(time.Date(now.Year(), 12, 31, 0, 0, 0, 0, time.Local))
-							model = tvRevenueReloading(dateSearch, 0, tv, tvResultLabel, datedb)
+							model = tvRevenueReloading(dateSearch, 0, tv, tvResultLabel, datedb, sumNEcc, sumNEcard, sumNEcash, sumNEaddP, sumNEsubP)
 						},
 					},
 				},
@@ -99,7 +106,7 @@ func newSalesPage(parent walk.Container) (Page, error) {
 					PushButton{
 						Text: "검색",
 						OnClicked: func() {
-							model = tvRevenueReloading(dateSearch, 0, tv, tvResultLabel, datedb)
+							model = tvRevenueReloading(dateSearch, 0, tv, tvResultLabel, datedb, sumNEcc, sumNEcard, sumNEcash, sumNEaddP, sumNEsubP)
 						},
 					},
 					HSpacer{
@@ -119,8 +126,8 @@ func newSalesPage(parent walk.Container) (Page, error) {
 				MultiSelection:   true,
 				MinSize:          Size{300, 300},
 				Columns: []TableViewColumn{
-					{Title: "번호", DataMember: "RevenueId"},
-					{Title: "고객번호", DataMember: "MemberId", Hidden: true},
+					{Title: "번호", DataMember: "index", Width: 40},
+					{Title: "매출번호", DataMember: "RevenueId", Hidden: true},
 					{Title: "이름", DataMember: "MemberName"},
 					{Title: "핸드폰번호", DataMember: "PhoneNumber"},
 					{Title: "결제금액", DataMember: "Sales", Alignment: AlignFar},
@@ -131,11 +138,11 @@ func newSalesPage(parent walk.Container) (Page, error) {
 					{Title: "결제일", DataMember: "CreateDate", Width: 150},
 				},
 				Model: model,
-				OnSelectedIndexesChanged: func() {
-					var index []int
-					index = tv.SelectedIndexes()
-					fmt.Println(fmt.Sprintf("%v", model.Value(index[0], 0)))
-				},
+				//OnSelectedIndexesChanged: func() {
+				//	var index []int
+				//	index = tv.SelectedIndexes()
+				//	fmt.Println(fmt.Sprintf("%v", model.Value(index[0], 0)))
+				//},
 			},
 			Composite{
 				Layout: VBox{},
@@ -186,6 +193,13 @@ func newSalesPage(parent walk.Container) (Page, error) {
 								AssignTo: &sumNEsubP,
 								Suffix:   " p",
 								ReadOnly: true,
+								OnBoundsChanged: func() {
+									sumNEcc.SetValue(float64(sumDto.SumSales))
+									sumNEcard.SetValue(float64(sumDto.SumCard))
+									sumNEcash.SetValue(float64(sumDto.SumCash))
+									sumNEaddP.SetValue(float64(sumDto.SumAddP))
+									sumNEsubP.SetValue(float64(sumDto.SumSubP))
+								},
 							},
 						},
 					},
@@ -208,16 +222,37 @@ type SearchDate struct {
 	Edt time.Time
 }
 
-func tvRevenueReloading(dateSearch *SearchDate, memberId int, tv *walk.TableView, tvResultLabel *walk.Label, datedb *walk.DataBinder) *RevenuesModel {
+func tvRevenueReloading(dateSearch *SearchDate, memberId int, tv *walk.TableView, tvResultLabel *walk.Label, datedb *walk.DataBinder, sumNEcc, sumNEcard, sumNEcash, sumNEaddP, sumNEsubP *walk.NumberEdit) *RevenuesModel {
 	if err := datedb.Submit(); err != nil {
 		panic(err)
 		return nil
 	}
+	startDate := dateSearch.Sdt.Format("2006-01-02")
+	endDate := dateSearch.Edt.Format("2006-01-02")
+
 	fmt.Println("==> 검색 : ", datedb.DataSource())
-	model := NewRevenuesModel(dateSearch, memberId)
+	model := NewRevenuesModel(startDate, endDate, memberId)
 	tv.SetModel(model)
 	tvResultLabel.SetText(strconv.Itoa(model.RowCount()))
+	if err := SumInfoLoading(startDate, endDate, memberId, sumNEcc, sumNEcard, sumNEcash, sumNEaddP, sumNEsubP); err != nil {
+		panic(err.Error())
+	}
+
 	return model
+}
+
+func SumInfoLoading(startDate, endDate string, memberId int, sumNEcc, sumNEcard, sumNEcash, sumNEaddP, sumNEsubP *walk.NumberEdit) error {
+	var err error
+	var result *dto.SumSalesPointDto
+	if result, err = service.FindSumSalesPoint(dbconn, startDate, endDate, memberId); err != nil {
+		return err
+	}
+	sumNEcc.SetValue(float64(result.SumSales))
+	sumNEcard.SetValue(float64(result.SumCard))
+	sumNEcash.SetValue(float64(result.SumCash))
+	sumNEaddP.SetValue(float64(result.SumAddP))
+	sumNEsubP.SetValue(float64(result.SumSubP))
+	return nil
 }
 
 type RevenuesModel struct {
@@ -225,12 +260,13 @@ type RevenuesModel struct {
 	walk.SorterBase
 	sortColumn int
 	sortOrder  walk.SortOrder
-	revenues   []*dto.RevenueDto
+	revenues   []*RevenueTV
 }
 
-func NewRevenuesModel(dateSearch *SearchDate, memberId int) *RevenuesModel {
+func NewRevenuesModel(startDate, endDate string, memberId int) *RevenuesModel {
 	r := new(RevenuesModel)
-	r.ResetRows(dateSearch, memberId)
+	r.ResetRows(startDate, endDate, memberId)
+
 	return r
 }
 
@@ -243,10 +279,10 @@ func (r *RevenuesModel) Value(row, col int) interface{} {
 
 	switch col {
 	case 0:
-		return revenue.RevenueId
+		return revenue.index
 
 	case 1:
-		return revenue.MemberId
+		return revenue.RevenueId
 
 	case 2:
 		return revenue.MemberName
@@ -292,10 +328,10 @@ func (r *RevenuesModel) Sort(col int, order walk.SortOrder) error {
 
 		switch r.sortColumn {
 		case 0:
-			return c(a.RevenueId < b.RevenueId)
+			return c(a.index < b.index)
 
 		case 1:
-			return c(a.MemberId < b.MemberId)
+			return c(a.RevenueId < b.RevenueId)
 
 		case 2:
 			return c(a.MemberName < b.MemberName)
@@ -328,21 +364,18 @@ func (r *RevenuesModel) Sort(col int, order walk.SortOrder) error {
 	return r.SorterBase.Sort(col, order)
 }
 
-func (r *RevenuesModel) ResetRows(dateSearch *SearchDate, memberId int) {
+func (r *RevenuesModel) ResetRows(startDate, endDate string, memberId int) {
 	var err error
 	var revenueList []dto.RevenueDto
-
-	startDate := dateSearch.Sdt.Format("2006-01-02")
-	endDate := dateSearch.Edt.Format("2006-01-02")
 
 	if revenueList, err = service.FindRevenueList(dbconn, startDate, endDate, memberId); err != nil {
 		panic(err.Error())
 	}
-	r.revenues = make([]*dto.RevenueDto, len(revenueList))
+	r.revenues = make([]*RevenueTV, len(revenueList))
 	for i := range revenueList {
-		r.revenues[i] = &dto.RevenueDto{
+		r.revenues[i] = &RevenueTV{
+			index:       i + 1,
 			RevenueId:   revenueList[i].RevenueId,
-			MemberId:    revenueList[i].MemberId,
 			MemberName:  revenueList[i].MemberName,
 			PhoneNumber: revenueList[i].PhoneNumber,
 			Sales:       revenueList[i].Sales,
@@ -358,4 +391,17 @@ func (r *RevenuesModel) ResetRows(dateSearch *SearchDate, memberId int) {
 	r.PublishRowsReset()
 
 	r.Sort(r.sortColumn, r.sortOrder)
+}
+
+type RevenueTV struct {
+	index       int
+	RevenueId   int
+	MemberName  string
+	PhoneNumber string
+	Sales       int
+	SubPoint    int
+	AddPoint    int
+	FixedSales  int
+	PayType     string
+	CreateDate  string
 }
