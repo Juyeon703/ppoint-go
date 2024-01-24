@@ -187,7 +187,7 @@ func newSalesPage(parent walk.Container) (Page, error) {
 								ReadOnly: true,
 							},
 							Label{
-								Text: "총 사용 포인트",
+								Text: "총 사용 포인트(소멸 제외)",
 							},
 							NumberEdit{
 								AssignTo: &sumNEsubP,
@@ -233,7 +233,7 @@ func tvRevenueReloading(dateSearch *SearchDate, memberId int, tv *walk.TableView
 	fmt.Println("==> 검색 : ", datedb.DataSource())
 	model := NewRevenuesModel(startDate, endDate, memberId)
 	tv.SetModel(model)
-	tvResultLabel.SetText(strconv.Itoa(model.RowCount()))
+	tvResultLabel.SetText("검색 수 : " + strconv.Itoa(model.RowCount()))
 	if err := SumInfoLoading(startDate, endDate, memberId, sumNEcc, sumNEcard, sumNEcash, sumNEaddP, sumNEsubP); err != nil {
 		panic(err.Error())
 	}

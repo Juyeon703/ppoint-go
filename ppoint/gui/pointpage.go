@@ -10,6 +10,7 @@ import (
 	"ppoint/types"
 	"ppoint/utils"
 	"strconv"
+	"strings"
 )
 
 type PointPage struct {
@@ -55,6 +56,14 @@ func newPointPage(parent walk.Container) (Page, error) {
 							LineEdit{
 								AssignTo: &searchMember,
 								Text:     Bind("searchMember"),
+								OnEditingFinished: func() {
+									str := searchMember.Text()
+									if strings.HasPrefix(str, "010") {
+										if len(str) == 11 || len(str) == 10 {
+											searchMember.SetText(PhoneNumAddHyphen(str))
+										}
+									}
+								},
 							},
 							PushButton{
 								Text: "검색",
@@ -172,7 +181,10 @@ func newPointPage(parent walk.Container) (Page, error) {
 									LineEdit{
 										AssignTo: &phoneNumberLE,
 										ReadOnly: true,
-										Text:     Bind("PhoneNumber", Regexp{Pattern: "^01([0|1|6|7|8|9])-([0-9]{3,4})-([0-9]{4})$"}, SelRequired{}),
+										Text:     Bind("PhoneNumber", Regexp{Pattern: "^01([0|1|6|7|8|9])-([0-9]{3,4})-([0-9]{4})|01([0|1|6|7|8|9])([0-9]{3,4})([0-9]{4})$"}, SelRequired{}),
+										OnEditingFinished: func() {
+											phoneNumberLE.SetText(PhoneNumAddHyphen(phoneNumberLE.Text()))
+										},
 									},
 								},
 							},

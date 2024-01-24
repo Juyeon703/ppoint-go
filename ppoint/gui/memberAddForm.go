@@ -14,6 +14,7 @@ func RunMemberAddDialog(owner walk.Form, member *dto.MemberAddDto) (int, error) 
 	var db *walk.DataBinder
 	var acceptPB, cancelPB *walk.PushButton
 	var dateEditor *walk.DateEdit
+	var phoneNumLE *walk.LineEdit
 
 	return Dialog{
 		AssignTo:      &dlg,
@@ -45,8 +46,12 @@ func RunMemberAddDialog(owner walk.Form, member *dto.MemberAddDto) (int, error) 
 						TextAlignment: AlignFar,
 					},
 					LineEdit{
-						Text:          Bind("PhoneNumber", Regexp{Pattern: "^01([0|1|6|7|8|9])-([0-9]{3,4})-([0-9]{4})$"}, SelRequired{}),
+						AssignTo:      &phoneNumLE,
+						Text:          Bind("PhoneNumber", Regexp{Pattern: "^01([0|1|6|7|8|9])-([0-9]{3,4})-([0-9]{4})|01([0|1|6|7|8|9])([0-9]{3,4})([0-9]{4})$"}, SelRequired{}),
 						TextAlignment: AlignCenter,
+						OnEditingFinished: func() {
+							phoneNumLE.SetText(PhoneNumAddHyphen(phoneNumLE.Text()))
+						},
 					},
 					Label{
 						Text:          "생일 : ",

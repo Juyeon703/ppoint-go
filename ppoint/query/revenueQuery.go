@@ -109,7 +109,7 @@ func (dbc *DbConfig) SelectTotalSalesByMember(memberId int) (*dto.MemberSumSales
 
 func (dbc *DbConfig) SelectSumSalesPointByCustomDate(startDate, endDate string) (*dto.SumSalesPointDto, error) {
 	var result dto.SumSalesPointDto
-	err := dbc.DbConnection.QueryRow("SELECT SUM(Sales), SUM(IF(pay_type='카드', sales, 0)), SUM(IF(pay_type='현금', sales, 0)), SUM(add_point), SUM(sub_point) FROM ppoint.revenue WHERE date_format(create_date, '%Y-%m-%d') BETWEEN ? and ?", startDate, endDate).
+	err := dbc.DbConnection.QueryRow("SELECT SUM(Sales), SUM(IF(pay_type='카드', sales, 0)), SUM(IF(pay_type='현금', sales, 0)), SUM(add_point), SUM(IF(pay_type='소멸', 0, sub_point)) FROM ppoint.revenue WHERE date_format(create_date, '%Y-%m-%d') BETWEEN ? and ?", startDate, endDate).
 		Scan(&result.SumSales, &result.SumCard, &result.SumCash, &result.SumAddP, &result.SumSubP)
 	if err != nil {
 		return &result, err
@@ -119,7 +119,7 @@ func (dbc *DbConfig) SelectSumSalesPointByCustomDate(startDate, endDate string) 
 
 func (dbc *DbConfig) SelectSumSalesPointByMemberId(memberId int) (*dto.SumSalesPointDto, error) {
 	var result dto.SumSalesPointDto
-	err := dbc.DbConnection.QueryRow("SELECT SUM(Sales), SUM(IF(pay_type='카드', sales, 0)), SUM(IF(pay_type='현금', sales, 0)), SUM(add_point), SUM(sub_point) FROM ppoint.revenue WHERE member_id=?", memberId).
+	err := dbc.DbConnection.QueryRow("SELECT SUM(Sales), SUM(IF(pay_type='카드', sales, 0)), SUM(IF(pay_type='현금', sales, 0)), SUM(add_point), SUM(IF(pay_type='소멸', 0, sub_point)) FROM ppoint.revenue WHERE member_id=?", memberId).
 		Scan(&result.SumSales, &result.SumCard, &result.SumCash, &result.SumAddP, &result.SumSubP)
 	if err != nil {
 		return &result, err
