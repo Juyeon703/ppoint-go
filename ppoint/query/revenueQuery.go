@@ -99,7 +99,7 @@ func (dbc *DbConfig) SelectRevenuesByMember(memberId int) ([]dto.RevenueDto, err
 
 func (dbc *DbConfig) SelectTotalSalesByMember(memberId int) (*dto.MemberSumSalesDto, error) {
 	var total dto.MemberSumSalesDto
-	err := dbc.DbConnection.QueryRow("SELECT case when SUM(Sales) IS NULL then 0 ELSE SUM(Sales) END AS TotalSales, case when SUM(add_point) IS NULL then 0 ELSE SUM(add_point) END AS TotalPoint, FROM ppoint.revenue WHERE revenue.member_id=?", memberId).
+	err := dbc.DbConnection.QueryRow("SELECT IFNULL(SUM(Sales), 0) AS TotalSales, IFNULL(SUM(add_point), 0) AS TotalPoint, FROM ppoint.revenue WHERE revenue.member_id=?", memberId).
 		Scan(&total.TotalSales, &total.TotalPoint)
 	if err != nil {
 		return &total, err
@@ -109,7 +109,7 @@ func (dbc *DbConfig) SelectTotalSalesByMember(memberId int) (*dto.MemberSumSales
 
 func (dbc *DbConfig) SelectSumSalesPointByCustomDate(startDate, endDate string) (*dto.SumSalesPointDto, error) {
 	var result dto.SumSalesPointDto
-	err := dbc.DbConnection.QueryRow("SELECT case when SUM(Sales) IS NULL then 0 ELSE SUM(Sales) END AS sumSale, case when SUM(IF(pay_type='카드', sales, 0)) IS NULL then 0 ELSE SUM(IF(pay_type='카드', sales, 0)) END AS sumCard, case when SUM(IF(pay_type='현금', sales, 0)) IS NULL then 0 ELSE SUM(IF(pay_type='현금', sales, 0)) END AS sumCash,case when SUM(IF(pay_type='소멸', 0, sub_point)) IS NULL then 0 ELSE SUM(IF(pay_type='소멸', 0, sub_point)) END AS sumSubP, case when SUM(add_point) IS NULL then 0 ELSE SUM(add_point) END AS sumAddP FROM ppoint.revenue WHERE date_format(create_date, '%Y-%m-%d') BETWEEN ? and ?", startDate, endDate).
+	err := dbc.DbConnection.QueryRow("SELECT IFNULL(SUM(Sales), 0) AS sumSale, IFNULL(SUM(IF(pay_type='카드', sales, 0)), 0) AS sumCard, IFNULL(SUM(IF(pay_type='현금', sales, 0)), 0) AS sumCash, IFNULL(SUM(IF(pay_type='소멸', sales, 0)), 0) AS sumSubP, IFNULL(SUM(add_point), 0) AS sumAddP FROM ppoint.revenue WHERE date_format(create_date, '%Y-%m-%d') BETWEEN ? and ?", startDate, endDate).
 		Scan(&result.SumSales, &result.SumCard, &result.SumCash, &result.SumAddP, &result.SumSubP)
 	if err != nil {
 		return &result, err
@@ -119,7 +119,7 @@ func (dbc *DbConfig) SelectSumSalesPointByCustomDate(startDate, endDate string) 
 
 func (dbc *DbConfig) SelectSumSalesPointByMemberId(memberId int) (*dto.SumSalesPointDto, error) {
 	var result dto.SumSalesPointDto
-	err := dbc.DbConnection.QueryRow("SELECT case when SUM(Sales) IS NULL then 0 ELSE SUM(Sales) END AS sumSale, case when SUM(IF(pay_type='카드', sales, 0)) IS NULL then 0 ELSE SUM(IF(pay_type='카드', sales, 0)) END AS sumCard, case when SUM(IF(pay_type='현금', sales, 0)) IS NULL then 0 ELSE SUM(IF(pay_type='현금', sales, 0)) END AS sumCash,case when SUM(IF(pay_type='소멸', 0, sub_point)) IS NULL then 0 ELSE SUM(IF(pay_type='소멸', 0, sub_point)) END AS sumSubP, case when SUM(add_point) IS NULL then 0 ELSE SUM(add_point) END AS sumAddP FROM ppoint.revenue  WHERE member_id=?", memberId).
+	err := dbc.DbConnection.QueryRow("SELECT IFNULL(SUM(Sales), 0) AS sumSale, IFNULL(SUM(IF(pay_type='카드', sales, 0)), 0) AS sumCard, IFNULL(SUM(IF(pay_type='현금', sales, 0)), 0) AS sumCash, IFNULL(SUM(IF(pay_type='소멸', sales, 0)), 0) AS sumSubP, IFNULL(SUM(add_point), 0) AS sumAddP FROM ppoint.revenue WHERE member_id=?", memberId).
 		Scan(&result.SumSales, &result.SumCard, &result.SumCash, &result.SumAddP, &result.SumSubP)
 	if err != nil {
 		return &result, err
