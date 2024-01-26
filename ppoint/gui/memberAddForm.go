@@ -6,6 +6,7 @@ import (
 	"log"
 	"ppoint/dto"
 	"ppoint/service"
+	"ppoint/utils"
 	"time"
 )
 
@@ -50,7 +51,7 @@ func RunMemberAddDialog(owner walk.Form, member *dto.MemberAddDto) (int, error) 
 						Text:          Bind("PhoneNumber", Regexp{Pattern: "^01([0|1|6|7|8|9])-([0-9]{3,4})-([0-9]{4})|01([0|1|6|7|8|9])([0-9]{3,4})([0-9]{4})$"}, SelRequired{}),
 						TextAlignment: AlignCenter,
 						OnEditingFinished: func() {
-							phoneNumLE.SetText(PhoneNumAddHyphen(phoneNumLE.Text()))
+							phoneNumLE.SetText(utils.PhoneNumAddHyphen(phoneNumLE.Text()))
 						},
 					},
 					Label{

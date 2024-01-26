@@ -109,7 +109,7 @@ func newMemberPage(parent walk.Container) (Page, error) {
 										ReadOnly: true,
 										Text:     Bind("PhoneNumber", Regexp{Pattern: "^01([0|1|6|7|8|9])-([0-9]{3,4})-([0-9]{4})|01([0|1|6|7|8|9])([0-9]{3,4})([0-9]{4})$"}, SelRequired{}),
 										OnEditingFinished: func() {
-											phonenumLE.SetText(PhoneNumAddHyphen(phonenumLE.Text()))
+											phonenumLE.SetText(utils.PhoneNumAddHyphen(phonenumLE.Text()))
 										},
 									},
 								},
@@ -270,7 +270,7 @@ func newMemberPage(parent walk.Container) (Page, error) {
 							str := mpSearchLE.Text()
 							if strings.HasPrefix(str, "010") {
 								if len(str) == 11 || len(str) == 10 {
-									mpSearchLE.SetText(PhoneNumAddHyphen(str))
+									mpSearchLE.SetText(utils.PhoneNumAddHyphen(str))
 								}
 							}
 						},

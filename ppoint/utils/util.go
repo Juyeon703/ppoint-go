@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"fmt"
 	"regexp"
 	"time"
 )
@@ -31,4 +32,23 @@ func RegExpDate(str string) bool {
 func RegExpPhoneNum(str string) bool {
 	reg, _ := regexp.MatchString("^01([0|1|6|7|8|9])-([0-9]{3,4})-([0-9]{4})$", str)
 	return reg
+}
+
+func PhoneNumAddHyphen(text string) string {
+	fmt.Println(text)
+	rtStr := ""
+	for idx, str := range text {
+		rtStr += string(str)
+		if len(text) == 11 {
+			if idx == 2 || idx == 6 {
+				rtStr += "-"
+			}
+		} else if len(text) == 10 {
+			if idx == 2 || idx == 5 {
+				rtStr += "-"
+			}
+		}
+	}
+	fmt.Println(rtStr)
+	return rtStr
 }
