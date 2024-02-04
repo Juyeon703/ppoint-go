@@ -1,8 +1,10 @@
 package gui
 
 import (
+	"fmt"
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
+	"ppoint/types"
 )
 
 type SettingPage struct {
@@ -12,104 +14,52 @@ type SettingPage struct {
 func newSettingPage(parent walk.Container) (Page, error) {
 	p := new(SettingPage)
 
+	var pCash, pCard, pPointLimit, pDbBackupPath *walk.LineEdit
+
+	var strCash string
+	var strCard string
+	var strPointLimit string
+	var strDbBackupPath string
+
+	var err error
+	var settingList []types.Setting
+
+	if settingList, err = dbconn.SelectSettings(); err == nil {
+		for _, sett := range settingList {
+			if sett.SettingType == "db_backup_path" {
+				strDbBackupPath = sett.SettingValue
+			} else if sett.SettingType == "point_limit" {
+				strPointLimit = sett.SettingValue
+			} else if sett.SettingType == "pay_type_card" {
+				strCard = sett.SettingValue
+			} else if sett.SettingType == "pay_type_cash" {
+				strCash = sett.SettingValue
+			}
+		}
+	}
+
 	if err := (Composite{
 		AssignTo: &p.Composite,
 		Name:     "설정 페이지",
 		Layout:   VBox{},
+		OnBoundsChanged: func() {
+			pCash.SetText(strCash)
+			pCard.SetText(strCard)
+			pPointLimit.SetText(strPointLimit)
+			pDbBackupPath.SetText(strDbBackupPath)
+		},
 		Children: []Widget{
 			Label{Text: "설정 페이지"},
 			HSpacer{},
 			HSplitter{
 				Children: []Widget{
 					//left box
-					VSplitter{
-						Children: []Widget{
-							Label{
-								ColumnSpan: 10,
-								Text:       "* 잠재 고객 : 포인트 적립을 한번도 하지 않은 고객",
-							},
-							HSpacer{},
-							Label{
-								Text: "* 신규 고객 : 포인트 적립을 처음으로 1회 한 고객",
-							},
-							HSpacer{},
-							Label{
-								Name: "woosoo",
-								Text: "* 우수 고객 ",
-							},
-							HSpacer{},
-							HSplitter{
-								Children: []Widget{
-									Label{
-										Name: "woosoo_sales",
-										Text: "매출액",
-									},
-									LineEdit{
-										Name: "text_woosoo_sales",
-										Text: Bind("woosoo"),
-									},
-									Label{
-										Text: "원 이상",
-									},
-								},
-							},
-							HSplitter{
-								Children: []Widget{
-									Label{
-										Name: "woosoo_visit_count",
-										Text: "방문횟수",
-									},
-									LineEdit{
-										Name: "text_woosoo_visit_count",
-										Text: Bind("woosoo_visit_count"),
-									},
-									Label{
-										Text: "회 이상",
-									},
-								},
-							},
-							HSpacer{},
-							Label{
-								Name: "forever",
-								Text: "* 평생 고객 ",
-							},
-							HSpacer{},
-							HSplitter{
-								Children: []Widget{
-									Label{
-										Name: "forever_sales",
-										Text: "매출액",
-									},
-									LineEdit{
-										Name: "text_forever_sales",
-										Text: Bind("forever"),
-									},
-									Label{
-										Text: "원 이상",
-									},
-								},
-							},
-							HSplitter{
-								Children: []Widget{
-									Label{
-										Name: "forever_visit_count",
-										Text: "방문횟수",
-									},
-									LineEdit{
-										Name: "text_forever_visit_count",
-										Text: Bind("forever_visit_count"),
-									},
-									Label{
-										Text: "회 이상",
-									},
-								},
-							},
-						},
-					},
+					//VSplitter{},
 
 					//right box
 					VSplitter{
 						Children: []Widget{
+
 							HSplitter{
 								Children: []Widget{
 									Label{
@@ -117,8 +67,9 @@ func newSettingPage(parent walk.Container) (Page, error) {
 										Text: "현금 매출 액의 ",
 									},
 									LineEdit{
-										Name: "text_cash_point_percent",
-										Text: Bind("cash_point_percent"),
+										AssignTo: &pCash,
+										Name:     "text_cash_point_percent",
+										Text:     Bind("cash_point_percent"),
 									},
 									Label{
 										Text: "% 적립",
@@ -132,8 +83,9 @@ func newSettingPage(parent walk.Container) (Page, error) {
 										Text: "카드 매출 액의 ",
 									},
 									LineEdit{
-										Name: "text_card_point_percent",
-										Text: Bind("card_point_percent"),
+										AssignTo: &pCard,
+										Name:     "text_card_point_percent",
+										Text:     Bind("card_point_percent"),
 									},
 									Label{
 										Text: "% 적립",
@@ -147,11 +99,26 @@ func newSettingPage(parent walk.Container) (Page, error) {
 										Text: "현금처럼 사용 ",
 									},
 									LineEdit{
-										Name: "text_usable_point_limit",
-										Text: Bind("usable_point_limit"),
+										AssignTo: &pPointLimit,
+										Name:     "text_usable_point_limit",
+										Text:     Bind("usable_point_limit"),
 									},
 									Label{
 										Text: "포인트 이상",
+									},
+								},
+							},
+
+							HSplitter{
+								Children: []Widget{
+									Label{
+										Name: "db_bakup_path",
+										Text: "데이터 백업 경로",
+									},
+									LineEdit{
+										AssignTo: &pDbBackupPath,
+										Name:     "text_db_bakup_path",
+										Text:     Bind("db_bakup_path"),
 									},
 								},
 							},
@@ -162,6 +129,34 @@ func newSettingPage(parent walk.Container) (Page, error) {
 			PushButton{
 				Text: "저장",
 				OnClicked: func() {
+					var settingGrp []string
+					settingGrp = []string{"pay_type_cash", "pay_type_card", "point_limit", "db_backup_path"}
+
+					if pCash.Text() != "" && pCard.Text() != "" && pPointLimit.Text() != "" && pDbBackupPath.Text() != "" {
+						for _, settType := range settingGrp {
+							var inputValue string
+							if settType == "pay_type_cash" {
+								inputValue = pCash.Text()
+							}
+							if settType == "pay_type_card" {
+								inputValue = pCard.Text()
+							}
+							if settType == "point_limit" {
+								inputValue = pPointLimit.Text()
+							}
+							if settType == "db_backup_path" {
+								inputValue = pDbBackupPath.Text()
+							}
+
+							fmt.Println(settType, inputValue)
+							if err = dbconn.UpdateSettingByType(settType, inputValue); err != nil {
+								//err
+							} else {
+								fmt.Println("success")
+							}
+						}
+					}
+
 					/*if err := db.Submit(); err != nil {
 						log.Print(err)
 						return

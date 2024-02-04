@@ -10,6 +10,12 @@ func (dbc *DbConfig) UpdateSettingById(settingType, newValue, newDescription str
 	_, err := dbc.DbConnection.Exec("UPDATE `ppoint`.`setting` SET setting_value=?, setting_description=? WHERE setting_type=?", newValue, newDescription, settingType)
 	return err
 }
+
+func (dbc *DbConfig) UpdateSettingByType(settingType, newValue string) error {
+	_, err := dbc.DbConnection.Exec("UPDATE `ppoint`.`setting` SET setting_value=? WHERE setting_type=?", newValue, settingType)
+	return err
+}
+
 func (dbc *DbConfig) DeleteSetting(settingType string) error {
 	_, err := dbc.DbConnection.Exec("DELETE FROM `ppoint`.`setting` WHERE setting_type=?;", settingType)
 	return err
