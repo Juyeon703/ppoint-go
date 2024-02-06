@@ -1,7 +1,7 @@
 package service
 
 import (
-	"fmt"
+	"log"
 	"ppoint/dto"
 	"ppoint/query"
 )
@@ -12,8 +12,8 @@ func MemberAdd(dbconn *query.DbConfig, member *dto.MemberAddDto) error {
 	if memberId, err = dbconn.CreateMember(member); err != nil {
 		return err
 	}
-	fmt.Println("======> CreateMember() 호출")
-	fmt.Println("등록된 회원 번호 : ", memberId)
+	log.Println("======> CreateMember() 호출")
+	log.Println("등록된 회원 번호 : ", memberId)
 	return nil
 }
 
@@ -27,7 +27,7 @@ func MemberUpdate(dbconn *query.DbConfig, updateMember *dto.MemberUpdateDto, ori
 	if err = dbconn.UpdateMemberByDto(updateMember); err != nil {
 		return err
 	}
-	fmt.Println("=============> UpdateMemberByDto() 호출")
+	log.Println("=============> UpdateMemberByDto() 호출")
 	return nil
 }
 
@@ -39,13 +39,13 @@ func FindMemberList(dbconn *query.DbConfig, search string) ([]dto.MemberDto, err
 		if memberList, err = dbconn.SelectMemberSearch(search); err != nil {
 			return nil, err
 		} else {
-			fmt.Println("=============> SelectMemberSearch() 호출")
+			log.Println("=============> SelectMemberSearch() 호출")
 		}
 	} else {
 		if memberList, err = dbconn.SelectMembersDto(); err != nil {
 			return nil, err
 		} else {
-			fmt.Println("=============> SelectMembersDto() 호출")
+			log.Println("=============> SelectMembersDto() 호출")
 		}
 	}
 	return memberList, nil
@@ -87,7 +87,7 @@ func FindSumSalesOfMember(dbconn *query.DbConfig, memberId int) (*dto.MemberSumS
 	if result, err = dbconn.SelectTotalSalesByMember(memberId); err != nil {
 		return nil, err
 	}
-	fmt.Println("=============> SelectTotalSalesByMember() 호출")
+	log.Println("=============> SelectTotalSalesByMember() 호출")
 
 	return result, nil
 }
@@ -97,10 +97,10 @@ func ChangePointNoVisitFor3Month(dbconn *query.DbConfig) error {
 	if err = dbconn.CreateRevenueChangePointNoVisitFor3Month(); err != nil {
 		return err
 	}
-	fmt.Println("=============> CreateRevenueChangePointNoVisitFor3Month() 호출")
+	log.Println("=============> CreateRevenueChangePointNoVisitFor3Month() 호출")
 	if err = dbconn.Update0PointMemberNoVisitFor3Month(); err != nil {
 		return err
 	}
-	fmt.Println("=============> Update0PointMemberNoVisitFor3Month() 호출")
+	log.Println("=============> Update0PointMemberNoVisitFor3Month() 호출")
 	return nil
 }

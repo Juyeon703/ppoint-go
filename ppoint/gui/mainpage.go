@@ -33,12 +33,15 @@ func MainPage(DbConf *query.DbConfig) {
 	winMain = new(AppMainWindow)
 
 	if cashSV, err = service.FindSettingValue(dbconn, types.SettingCash); err != nil {
+		log.Fatalln(err.Error())
 		panic(err)
 	}
 	if cardSV, err = service.FindSettingValue(dbconn, types.SettingCard); err != nil {
+		log.Fatalln(err.Error())
 		panic(err)
 	}
 	if nPointLimit, err = service.FindSettingValue(dbconn, types.SettingPointLimit); err != nil {
+		log.Fatalln(err.Error())
 		panic(err)
 	}
 	fmt.Printf("현금 적립 %d, 카드 적립 %d, 포인트 사용 제한 : %dp\n", cashSV, cardSV, nPointLimit)

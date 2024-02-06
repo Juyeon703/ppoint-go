@@ -1,9 +1,9 @@
 package gui
 
 import (
-	"fmt"
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
+	"log"
 	"ppoint/dto"
 	"ppoint/service"
 	"sort"
@@ -31,7 +31,7 @@ func newSalesPage(parent walk.Container) (Page, error) {
 		return nil, err
 	}
 
-	fmt.Println("매출 페이지", moveId)
+	log.Println("매출 페이지", moveId)
 
 	if err := (Composite{
 		AssignTo: &p.Composite,
@@ -142,7 +142,7 @@ func newSalesPage(parent walk.Container) (Page, error) {
 				//OnSelectedIndexesChanged: func() {
 				//	var index []int
 				//	index = tv.SelectedIndexes()
-				//	fmt.Println(fmt.Sprintf("%v", model.Value(index[0], 0)))
+				//	log.Println(fmt.Sprintf("%v", model.Value(index[0], 0)))
 				//},
 			},
 			Composite{
@@ -225,17 +225,19 @@ type SearchDate struct {
 
 func tvRevenueReloading(dateSearch *SearchDate, memberId int, tv *walk.TableView, tvResultLabel *walk.Label, datedb *walk.DataBinder, sumNEcc, sumNEcard, sumNEcash, sumNEaddP, sumNEsubP *walk.NumberEdit) *RevenuesModel {
 	if err := datedb.Submit(); err != nil {
+		log.Fatalln(err.Error())
 		panic(err)
 		return nil
 	}
 	startDate := dateSearch.Sdt.Format("2006-01-02")
 	endDate := dateSearch.Edt.Format("2006-01-02")
 
-	fmt.Println("==> 검색 : ", datedb.DataSource())
+	log.Println("==> 검색 : ", datedb.DataSource())
 	model := NewRevenuesModel(startDate, endDate, memberId)
 	tv.SetModel(model)
 	tvResultLabel.SetText("검색 수 : " + strconv.Itoa(model.RowCount()))
 	if err := SumInfoLoading(startDate, endDate, memberId, sumNEcc, sumNEcard, sumNEcash, sumNEaddP, sumNEsubP); err != nil {
+		log.Fatalln(err.Error())
 		panic(err.Error())
 	}
 
@@ -370,6 +372,7 @@ func (r *RevenuesModel) ResetRows(startDate, endDate string, memberId int) {
 	var revenueList []dto.RevenueDto
 
 	if revenueList, err = service.FindRevenueList(dbconn, startDate, endDate, memberId); err != nil {
+		log.Fatalln(err.Error())
 		panic(err.Error())
 	}
 	r.revenues = make([]*RevenueTV, len(revenueList))

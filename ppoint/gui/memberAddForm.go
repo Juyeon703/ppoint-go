@@ -1,7 +1,6 @@
 package gui
 
 import (
-	"fmt"
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
 	"log"
@@ -76,7 +75,7 @@ func RunMemberAddDialog(owner walk.Form, member *dto.MemberAddDto) (int, error) 
 						AssignTo: &acceptPB,
 						Text:     "OK",
 						OnClicked: func() {
-							fmt.Println("RunMemberAddDialog onclicked start")
+							log.Println("RunMemberAddDialog onclicked start")
 							if err := db.Submit(); err != nil {
 								log.Fatalln(err.Error())
 								panic(err)

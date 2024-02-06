@@ -53,8 +53,8 @@ func newMemberPage(parent walk.Container) (Page, error) {
 							if cmd, err := RunMemberAddDialog(winMain, addMember); err != nil {
 								log.Print(err)
 							} else if cmd == walk.DlgCmdOK {
-								fmt.Println("====회원 등록=====")
-								fmt.Println(addMember)
+								log.Println("====회원 등록=====")
+								log.Println(addMember)
 								model = tvReloading("", tv, tvResultLabel)
 								tv.SetCurrentIndex(model.RowCount() - 1)
 							}
@@ -195,15 +195,17 @@ func newMemberPage(parent walk.Container) (Page, error) {
 											selectBtn.SetText(cancelTitle)
 										} else if updateBtn.Text() == okTitle && !memberNameLE.ReadOnly() {
 											if err := mudb.Submit(); err != nil {
-												panic(err.Error())
+												log.Fatalln(err.Error())
+												panic(err)
 											}
 											if isExistMember.MemberName != updateMember.MemberName || isExistMember.PhoneNumber != updateMember.PhoneNumber ||
 												isExistMember.Birth != updateMember.Birth || isExistMember.TotalPoint != updateMember.TotalPoint ||
 												isExistMember.VisitCount != updateMember.VisitCount {
 												if err := service.MemberUpdate(dbconn, updateMember, isExistMember.TotalPoint); err != nil {
+													log.Fatalln(err.Error())
 													panic(err)
 												}
-												fmt.Println("==> update정보 : ", mudb.DataSource())
+												log.Println("==> update정보 : ", mudb.DataSource())
 												isExistMember.MemberName = updateMember.MemberName
 												isExistMember.PhoneNumber = updateMember.PhoneNumber
 												isExistMember.Birth = updateMember.Birth
@@ -231,19 +233,20 @@ func newMemberPage(parent walk.Container) (Page, error) {
 								OnClicked: func() {
 									if selectBtn.Text() == selectTitle {
 										if memberIdLE.Text() != "" {
-											fmt.Println(winMain.currentAction)
+											log.Println(winMain.currentAction)
 											moveId, _ = strconv.Atoi(isExistMember.MemberId)
-											fmt.Println("멤버페이지 이동 전", moveId)
+											log.Println("멤버페이지 이동 전", moveId)
 											////////////////////////////////////////////////////////////navTb 이상////////////////////////////////
 											if err := winMain.setCurrentAction(winMain.pageActions[2]); err != nil {
+												log.Fatalln(err.Error())
 												panic(err)
 											}
 											moveId = 0
-											fmt.Println("멤버페이지 이동 후", moveId)
+											log.Println("멤버페이지 이동 후", moveId)
 										}
 
 									} else if selectBtn.Text() == cancelTitle {
-										fmt.Println("cancelBtn====")
+										log.Println("cancelBtn====")
 										memberInfoReloading(isExistMember, memberIdLE, memberNameLE, phonenumLE, birthLE, cdtLE, udtLE, pointNE, countNE)
 										memberNameLE.SetReadOnly(true)
 										phonenumLE.SetReadOnly(true)
@@ -282,7 +285,7 @@ func newMemberPage(parent walk.Container) (Page, error) {
 						OnClicked: func() {
 							if mpSearchLE.Text() != "" {
 								// 이름, 폰 번호
-								fmt.Println("검색어 : ", mpSearchLE.Text())
+								log.Println("검색어 : ", mpSearchLE.Text())
 								model = tvReloading(mpSearchLE.Text(), tv, tvResultLabel)
 							}
 						},
@@ -291,7 +294,7 @@ func newMemberPage(parent walk.Container) (Page, error) {
 						Text: "초기화",
 						OnClicked: func() {
 							if mpSearchLE.Text() != "" {
-								fmt.Println("==초기화==")
+								log.Println("==초기화==")
 								mpSearchLE.SetText("")
 								model = tvReloading("", tv, tvResultLabel)
 							}
@@ -330,7 +333,7 @@ func newMemberPage(parent walk.Container) (Page, error) {
 				OnSelectedIndexesChanged: func() {
 					// 에러..?
 					index := tv.SelectedIndexes()
-					fmt.Println("클릭한 인덱스 : ", tv.SelectedIndexes())
+					log.Println("클릭한 인덱스 : ", tv.SelectedIndexes())
 					if len(index) > 0 {
 						isExistMember.MemberId = fmt.Sprintf("%v", model.Value(index[0], 0))
 						isExistMember.MemberName = fmt.Sprintf("%v", model.Value(index[0], 1))
@@ -478,6 +481,7 @@ func (m *MembersModel) ResetRows(search string) {
 	var memberList []dto.MemberDto
 
 	if memberList, err = service.FindMemberList(dbconn, search); err != nil {
+		log.Fatalln(err.Error())
 		panic(err)
 	}
 	if search != "" && len(memberList) <= 0 {

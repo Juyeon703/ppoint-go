@@ -1,7 +1,7 @@
 package service
 
 import (
-	"fmt"
+	"log"
 	"ppoint/dto"
 	"ppoint/query"
 	"ppoint/types"
@@ -17,12 +17,12 @@ func RevenueAdd(dbconn *query.DbConfig, revenueDto *dto.RevenueAddDto) error {
 		return err
 	}
 	if revenueDto.PayType == types.Card {
-		fmt.Println("===SelectSettingBySettingType(SettingCard) 호출")
+		log.Println("===SelectSettingBySettingType(SettingCard) 호출")
 		if result, err = dbconn.SelectSettingBySettingType(types.SettingCard); err != nil {
 			return err
 		}
 	} else if revenueDto.PayType == types.Cash {
-		fmt.Println("===SelectSettingBySettingType(SettingCash) 호출")
+		log.Println("===SelectSettingBySettingType(SettingCash) 호출")
 		if result, err = dbconn.SelectSettingBySettingType(types.SettingCash); err != nil {
 			return err
 		}
@@ -43,11 +43,11 @@ func RevenueAdd(dbconn *query.DbConfig, revenueDto *dto.RevenueAddDto) error {
 		fixedSalesTemp = revenueDto.Sales - revenueDto.SubPoint
 		changePoint = -(revenueDto.SubPoint)
 	}
-	fmt.Println("===UpdateMemberByPoint() 호출")
+	log.Println("===UpdateMemberByPoint() 호출")
 	if err = dbconn.UpdateMemberByPoint(revenueDto.MemberId, changePoint); err != nil {
 		return err
 	}
-	fmt.Println("===CreateRevenue() 호출")
+	log.Println("===CreateRevenue() 호출")
 	if err = dbconn.CreateRevenue(revenueDto.MemberId, revenueDto.Sales, revenueDto.SubPoint, addPointTemp, fixedSalesTemp, revenueDto.PayType); err != nil {
 		return err
 	}
@@ -69,7 +69,7 @@ func PointEdit(dbconn *query.DbConfig, memberId string, originPoint, newPoint in
 		return err
 	}
 	result, _ := strconv.Atoi(memberId)
-	fmt.Println("===CreateRevenue() 호출")
+	log.Println("===CreateRevenue() 호출")
 	if err = dbconn.CreateRevenue(result, 0, subPoint, addPoint, 0, "포인트 변경"); err != nil {
 		return err
 	}
@@ -85,18 +85,18 @@ func FindRevenueList(dbconn *query.DbConfig, startDate, endDate string, memberId
 		if revenueList, err = dbconn.SelectRevenuesByMember(memberId); err != nil {
 			return nil, err
 		} else {
-			fmt.Println("=============> SelectRevenuesByMember() 호출")
+			log.Println("=============> SelectRevenuesByMember() 호출")
 		}
 	} else {
 		if revenueList, err = dbconn.SelectRevenuesByCustomDate(startDate, endDate); err != nil {
 			return nil, err
 		} else {
 
-			fmt.Println("=============> SelectRevenuesByCustomDate() 호출")
+			log.Println("=============> SelectRevenuesByCustomDate() 호출")
 		}
 	}
 
-	fmt.Println(len(revenueList), startDate, endDate, memberId)
+	log.Println(len(revenueList), startDate, endDate, memberId)
 	return revenueList, nil
 }
 
@@ -108,13 +108,13 @@ func FindSumSalesPoint(dbconn *query.DbConfig, startDate, endDate string, member
 		if result, err = dbconn.SelectSumSalesPointByMemberId(memberId); err != nil {
 			return nil, err
 		} else {
-			fmt.Println("=============> SelectSumSalesPointByMemberId() 호출")
+			log.Println("=============> SelectSumSalesPointByMemberId() 호출")
 		}
 	} else {
 		if result, err = dbconn.SelectSumSalesPointByCustomDate(startDate, endDate); err != nil {
 			return nil, err
 		} else {
-			fmt.Println("=============> SelectSumSalesPointByCustomDate() 호출")
+			log.Println("=============> SelectSumSalesPointByCustomDate() 호출")
 		}
 	}
 

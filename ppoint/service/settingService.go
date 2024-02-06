@@ -1,7 +1,7 @@
 package service
 
 import (
-	"fmt"
+	"log"
 	"ppoint/query"
 	"strconv"
 )
@@ -13,7 +13,7 @@ func FindSettingValue(dbconn *query.DbConfig, settingType string) (int, error) {
 		return 0, err
 	}
 	temp, _ := strconv.Atoi(result)
-	fmt.Println("=============> SelectSettingByPayType() 호출")
+	log.Println("=============> SelectSettingByPayType() 호출")
 	return temp, nil
 }
 

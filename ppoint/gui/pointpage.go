@@ -1,7 +1,6 @@
 package gui
 
 import (
-	"fmt"
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
 	"log"
@@ -75,7 +74,8 @@ func newPointPage(parent walk.Container) (Page, error) {
 										return
 									} else {
 										if memberList, err := service.FindMemberList(dbconn, searchMember.Text()); err != nil {
-											panic(err.Error())
+											log.Fatalln(err.Error())
+											panic(err)
 										} else {
 											if len(memberList) <= 0 {
 												MsgBox("검색 결과 없음", "검색 결과가 없습니다.\n신규 회원을 등록해주세요.")
@@ -86,10 +86,11 @@ func newPointPage(parent walk.Container) (Page, error) {
 													memberInfoClear(memberIdLE, memberNameLE, phoneNumberLE, birthLE, udtLE,
 														memberIdNE, pointNE, countNE, beforePointNE, afterPointNE, totalSalesNE, totalPointNE)
 													clickedPT = revenueInfoClear(salesNE, subPointNE, fixedSalesNE, addPointNE, radioCardBtn, radioCashBtn)
-													fmt.Println("====회원 등록=====")
-													fmt.Println(addMember)
+													log.Println("====회원 등록=====")
+													log.Println(addMember)
 													if newMember, err = service.FindMember(dbconn, addMember.MemberName, addMember.PhoneNumber); err != nil {
-														panic(err.Error())
+														log.Fatalln(err.Error())
+														panic(err)
 													}
 													memberIdNE.SetValue(float64(newMember.MemberId))
 													memberIdLE.SetText(strconv.Itoa(newMember.MemberId))
@@ -105,7 +106,7 @@ func newPointPage(parent walk.Container) (Page, error) {
 													afterPointNE, totalSalesNE, totalPointNE); err != nil {
 													log.Print(err)
 												} else if cmd == walk.DlgCmdOK {
-													fmt.Println("==선택한 회원 번호====>", memberIdLE.Text())
+													log.Println("==선택한 회원 번호====>", memberIdLE.Text())
 													searchMember.SetText("")
 												}
 											}
@@ -292,9 +293,10 @@ func newPointPage(parent walk.Container) (Page, error) {
 													cancelBtn.SetVisible(true)
 												} else if updateBtn.Text() == okTitle && !memberNameLE.ReadOnly() {
 													if err := mudb.Submit(); err != nil {
-														panic(err.Error())
+														log.Fatalln(err.Error())
+														panic(err)
 													}
-													fmt.Println("==> update정보 : ", mudb.DataSource())
+													log.Println("==> update정보 : ", mudb.DataSource())
 													if nameTemp != updateMember.MemberName || phoneTemp != updateMember.PhoneNumber || birthTemp != updateMember.Birth ||
 														int(pointTemp) != updateMember.TotalPoint || int(countTemp) != updateMember.VisitCount {
 
@@ -511,7 +513,7 @@ func newPointPage(parent walk.Container) (Page, error) {
 											log.Print(err)
 											return
 										}
-										fmt.Println(revenue)
+										log.Println(revenue)
 
 										//if int(pointNE.Value()) <= 0 {
 										//	MsgBox("알림", "사용가능한 보유 포인트가 없습니다.")
@@ -537,6 +539,7 @@ func newPointPage(parent walk.Container) (Page, error) {
 											MsgBox("error", "error") //////////////////////////////////////////////////////////////////////////
 										} else {
 											if err := service.RevenueAdd(dbconn, revenue); err != nil {
+												log.Fatalln(err.Error())
 												panic(err)
 											}
 											totalSalesNE.SetValue(totalSalesNE.Value() + salesNE.Value())
