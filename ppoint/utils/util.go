@@ -2,6 +2,7 @@ package utils
 
 import (
 	"fmt"
+	"os"
 	"regexp"
 	"time"
 )
@@ -51,4 +52,19 @@ func PhoneNumAddHyphen(text string) string {
 	}
 	fmt.Println(rtStr)
 	return rtStr
+}
+
+func IsExistFile(fname string) bool {
+	if _, err := os.Stat(fname); os.IsNotExist(err) {
+		return false
+	}
+	return true
+}
+
+func CreateFilePath(fname string) error {
+	if err := os.MkdirAll(fname, os.ModePerm); err != nil {
+		return err
+	}
+
+	return nil
 }
