@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
-	"log"
 	"ppoint/dto"
 	"ppoint/service"
 	"strconv"
@@ -59,14 +58,12 @@ func RunMemberSearchDialog(owner walk.Form, memberList []dto.MemberDto,
 							if len(index) <= 0 {
 								MsgBox("에러", "선택한 회원이 없습니다.")
 							} else {
-								log.Println("클릭한 인덱스 : ", index, fmt.Sprintf("%v",
-									model.Value(index[0], 0)), fmt.Sprintf("%v", model.Value(index[0], 1)))
 								memberIdFl, _ := strconv.ParseFloat(fmt.Sprintf("%v", model.Value(index[0], 0)), 64)
 								memberIdNE.SetValue(memberIdFl)
 								memberIdLE.SetText(fmt.Sprintf("%v", model.Value(index[0], 0)))
 								if total, err = service.FindSumSalesOfMember(dbconn, int(memberIdFl)); err != nil {
-									log.Fatalln(err.Error())
-									panic(err.Error())
+									log.Error(err.Error())
+									panic(err)
 								}
 								totalSalesNE.SetValue(float64(total.TotalSales))
 								totalPointNE.SetValue(float64(total.TotalPoint))

@@ -3,7 +3,6 @@ package gui
 import (
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
-	"log"
 	"ppoint/dto"
 	"ppoint/service"
 	"ppoint/utils"
@@ -23,10 +22,10 @@ func RunMemberAddDialog(owner walk.Form, member *dto.MemberAddDto) (int, error) 
 		DefaultButton: &acceptPB,
 		CancelButton:  &cancelPB,
 		DataBinder: DataBinder{
-			AssignTo:       &db,
-			Name:           "member",
-			DataSource:     member,
-			ErrorPresenter: ToolTipErrorPresenter{},
+			AssignTo:   &db,
+			Name:       "member",
+			DataSource: member,
+			//ErrorPresenter: ToolTipErrorPresenter{},
 		},
 		MinSize: Size{300, 300},
 		Layout:  VBox{},
@@ -75,9 +74,8 @@ func RunMemberAddDialog(owner walk.Form, member *dto.MemberAddDto) (int, error) 
 						AssignTo: &acceptPB,
 						Text:     "OK",
 						OnClicked: func() {
-							log.Println("RunMemberAddDialog onclicked start")
 							if err := db.Submit(); err != nil {
-								log.Fatalln(err.Error())
+								log.Error(err.Error())
 								panic(err)
 								return
 							}
@@ -91,7 +89,6 @@ func RunMemberAddDialog(owner walk.Form, member *dto.MemberAddDto) (int, error) 
 								}
 
 							}
-							log.Println("RunMemberAddDialog onclicked end")
 						},
 					},
 					PushButton{

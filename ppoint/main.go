@@ -28,21 +28,19 @@ func init() {
 
 	var logPath string
 	if logPath, err = service.FindSettingStrValue(DbConf, "log_path"); err != nil {
-		log.Error(err)
 		panic(err)
 	}
 
 	if !utils.IsExistFile(logPath) {
 		if err = utils.CreateFilePath(logPath); err != nil {
-			log.Error(err)
 			panic(err)
 		}
 	}
 
 	if log, err = logue.Setup(logPath, "ppoint", 5); err != nil {
-		log.Error(err)
 		panic(err)
 	}
+	DbConf.Logue = log
 
 	// test 2일 -- 수정 필요
 	if err = service.ChangePointNoVisitFor3Month(DbConf); err != nil {

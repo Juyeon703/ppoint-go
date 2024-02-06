@@ -3,7 +3,6 @@ package gui
 import (
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
-	"log"
 	"ppoint/types"
 )
 
@@ -198,12 +197,11 @@ func newSettingPage(parent walk.Container) (Page, error) {
 										inputValue = pLogPath.Text()
 									}
 
-									log.Println(settType, inputValue)
 									if err = dbconn.UpdateSettingByType(settType, inputValue); err != nil {
 										//err
 										MsgBox("에러", "저장에 실패하였습니다")
 									} else {
-										log.Println("success")
+										log.Infof("[Update]UpdateSettingByType() // param{settingType : %s, settingValue : %s}", settType, inputValue)
 
 									}
 								}

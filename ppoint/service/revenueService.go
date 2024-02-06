@@ -1,7 +1,6 @@
 package service
 
 import (
-	"log"
 	"ppoint/dto"
 	"ppoint/query"
 	"ppoint/types"
@@ -10,6 +9,7 @@ import (
 
 func RevenueAdd(dbconn *query.DbConfig, revenueDto *dto.RevenueAddDto) error {
 	var err error
+	log := dbconn.Logue
 	var result string
 	var changePoint, addPointTemp, fixedSalesTemp int
 
@@ -17,15 +17,15 @@ func RevenueAdd(dbconn *query.DbConfig, revenueDto *dto.RevenueAddDto) error {
 		return err
 	}
 	if revenueDto.PayType == types.Card {
-		log.Println("===SelectSettingBySettingType(SettingCard) 호출")
 		if result, err = dbconn.SelectSettingBySettingType(types.SettingCard); err != nil {
 			return err
 		}
+		log.Debug("[Select]SelectSettingBySettingType(card)")
 	} else if revenueDto.PayType == types.Cash {
-		log.Println("===SelectSettingBySettingType(SettingCash) 호출")
 		if result, err = dbconn.SelectSettingBySettingType(types.SettingCash); err != nil {
 			return err
 		}
+		log.Debug("[Select]SelectSettingBySettingType(cash)")
 	} else {
 		return err
 	}
@@ -43,19 +43,21 @@ func RevenueAdd(dbconn *query.DbConfig, revenueDto *dto.RevenueAddDto) error {
 		fixedSalesTemp = revenueDto.Sales - revenueDto.SubPoint
 		changePoint = -(revenueDto.SubPoint)
 	}
-	log.Println("===UpdateMemberByPoint() 호출")
 	if err = dbconn.UpdateMemberByPoint(revenueDto.MemberId, changePoint); err != nil {
 		return err
 	}
-	log.Println("===CreateRevenue() 호출")
+	log.Infof("[Update]UpdateMemberByPoint() // param{memberId : %d, point : %d}", revenueDto.MemberId, changePoint)
 	if err = dbconn.CreateRevenue(revenueDto.MemberId, revenueDto.Sales, revenueDto.SubPoint, addPointTemp, fixedSalesTemp, revenueDto.PayType); err != nil {
 		return err
 	}
+	log.Infof("[Create]CreateRevenue() // param{memberId : %d, sales : %d, subPoint : %d, addPoint : %d, fixedSales : %d, payType : %s}",
+		revenueDto.MemberId, revenueDto.Sales, revenueDto.SubPoint, addPointTemp, fixedSalesTemp, revenueDto.PayType)
 	return nil
 }
 
 func PointEdit(dbconn *query.DbConfig, memberId string, originPoint, newPoint int) error {
 	var err error
+	log := dbconn.Logue
 	var subPoint, addPoint int
 
 	calc := originPoint - newPoint
@@ -69,53 +71,50 @@ func PointEdit(dbconn *query.DbConfig, memberId string, originPoint, newPoint in
 		return err
 	}
 	result, _ := strconv.Atoi(memberId)
-	log.Println("===CreateRevenue() 호출")
 	if err = dbconn.CreateRevenue(result, 0, subPoint, addPoint, 0, "포인트 변경"); err != nil {
 		return err
 	}
-
+	log.Infof("[Create]CreateRevenue() // param{memberId : %d, subPoint : %d, addPoint : %d, payType : 포인트 변경}", result, subPoint, addPoint)
 	return nil
 }
 
 func FindRevenueList(dbconn *query.DbConfig, startDate, endDate string, memberId int) ([]dto.RevenueDto, error) {
 	var err error
+	log := dbconn.Logue
 	var revenueList []dto.RevenueDto
 
 	if memberId != 0 {
 		if revenueList, err = dbconn.SelectRevenuesByMember(memberId); err != nil {
 			return nil, err
-		} else {
-			log.Println("=============> SelectRevenuesByMember() 호출")
 		}
+		log.Debugf("[Select]SelectRevenuesByMember() // param{memberId : %d}", memberId)
+
 	} else {
 		if revenueList, err = dbconn.SelectRevenuesByCustomDate(startDate, endDate); err != nil {
 			return nil, err
-		} else {
-
-			log.Println("=============> SelectRevenuesByCustomDate() 호출")
 		}
-	}
+		log.Debugf("[Select]SelectRevenuesByCustomDate() // param{startDate : %s, endDate : %s}", startDate, endDate)
 
-	log.Println(len(revenueList), startDate, endDate, memberId)
+	}
 	return revenueList, nil
 }
 
 func FindSumSalesPoint(dbconn *query.DbConfig, startDate, endDate string, memberId int) (*dto.SumSalesPointDto, error) {
 	var err error
+	log := dbconn.Logue
 	var result *dto.SumSalesPointDto
 
 	if memberId != 0 {
 		if result, err = dbconn.SelectSumSalesPointByMemberId(memberId); err != nil {
 			return nil, err
-		} else {
-			log.Println("=============> SelectSumSalesPointByMemberId() 호출")
 		}
+		log.Debugf("[Select]SelectSumSalesPointByMemberId() // param{memberId : %d}", memberId)
+
 	} else {
 		if result, err = dbconn.SelectSumSalesPointByCustomDate(startDate, endDate); err != nil {
 			return nil, err
-		} else {
-			log.Println("=============> SelectSumSalesPointByCustomDate() 호출")
 		}
+		log.Debugf("[Select]SelectSumSalesPointByCustomDate() // param{startDate : %s, endDate : %s}", startDate, endDate)
 	}
 
 	return result, nil

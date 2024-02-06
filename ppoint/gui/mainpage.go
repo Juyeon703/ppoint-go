@@ -2,15 +2,12 @@ package gui
 
 import (
 	"bytes"
-	"fmt"
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
-	"log"
 	"ppoint/backup"
 	"ppoint/db"
+	"ppoint/logue"
 	"ppoint/query"
-	"ppoint/service"
-	"ppoint/types"
 )
 
 type AppMainWindow struct {
@@ -20,31 +17,18 @@ type AppMainWindow struct {
 // MultiPageMainWindow 최상위 메인
 var winMain *AppMainWindow
 var dbconn *query.DbConfig
-var titleWidth, titleHeight = 1000, 800
+var log *logue.Logbook
+var titleWidth, titleHeight = 950, 700
 var subWidth, subHeight = 950, 700
 var toolbarHeight = 60
-var cashSV, cardSV, nPointLimit int
 
 func MainPage(DbConf *query.DbConfig) {
 	dbconn = DbConf
+	log = DbConf.Logue
 	walk.Resources.SetRootDirPath("img")
 	var err error
 
 	winMain = new(AppMainWindow)
-
-	if cashSV, err = service.FindSettingValue(dbconn, types.SettingCash); err != nil {
-		log.Fatalln(err.Error())
-		panic(err)
-	}
-	if cardSV, err = service.FindSettingValue(dbconn, types.SettingCard); err != nil {
-		log.Fatalln(err.Error())
-		panic(err)
-	}
-	if nPointLimit, err = service.FindSettingValue(dbconn, types.SettingPointLimit); err != nil {
-		log.Fatalln(err.Error())
-		panic(err)
-	}
-	fmt.Printf("현금 적립 %d, 카드 적립 %d, 포인트 사용 제한 : %dp\n", cashSV, cardSV, nPointLimit)
 
 	//multiple page main
 	var multiPageMainWindow *MultiPageMainWindow
@@ -73,6 +57,7 @@ func MainPage(DbConf *query.DbConfig) {
 		//	winMain.updateTitle(winMain.CurrentPageTitle())
 		//},
 		ToolBar: ToolBar{
+			Font:    Font{Bold: true},
 			MinSize: Size{titleWidth, toolbarHeight},
 			MaxSize: Size{titleWidth, toolbarHeight},
 		},
@@ -88,7 +73,7 @@ func MainPage(DbConf *query.DbConfig) {
 
 	multiPageMainWindow, err = NewMultiPageMainWindow(cfg)
 	if err != nil {
-		log.Fatalln(err.Error())
+		log.Error(err.Error())
 		panic(err)
 	}
 	winMain.MultiPageMainWindow = multiPageMainWindow
@@ -100,6 +85,7 @@ func MainPage(DbConf *query.DbConfig) {
 
 		//마지막 db connection 종료
 		db.DisConn(DbConf.DbConnection)
+		log.Debug("MAIN ClOSE")
 	})
 
 	winMain.Run()

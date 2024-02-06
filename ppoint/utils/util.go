@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"log"
+	"fmt"
 	"os"
 	"regexp"
 	"time"
@@ -36,7 +36,7 @@ func RegExpPhoneNum(str string) bool {
 }
 
 func PhoneNumAddHyphen(text string) string {
-	log.Println(text)
+	fmt.Println(text)
 	rtStr := ""
 	for idx, str := range text {
 		rtStr += string(str)
@@ -50,7 +50,7 @@ func PhoneNumAddHyphen(text string) string {
 			}
 		}
 	}
-	log.Println(rtStr)
+	fmt.Println(rtStr)
 	return rtStr
 }
 
