@@ -3,7 +3,6 @@ package backup
 import (
 	"errors"
 	"fmt"
-	"io"
 	"log"
 	"os"
 	"path/filepath"
@@ -17,8 +16,6 @@ func DbBackup(DbConf *query.DbConfig) {
 	var memberList []types.Member
 	var revenueList []types.Revenue
 	var settingList []types.Setting
-	var saveStr string
-	var memStr, rvnStr, SettStr string
 
 	prefixMemStr := "INSERT INTO `member` (`member_id`, `member_name`, `phone_number`, `birth`, `total_point`, `visit_count`, `create_date`, `update_date`) VALUES "
 	prefixRvnStr := "INSERT INTO `revenue` (`member_id`, `sales`, `sub_point`, `add_point`, `fixed_sales`, `pay_type`, `create_date`) VALUES "
@@ -35,82 +32,103 @@ func DbBackup(DbConf *query.DbConfig) {
 	clearOldBackupFile(dbBackupPath, pastDate)
 
 	if memberList, err = DbConf.SelectMembers(); err != nil {
+		log.Fatalln(err)
+		log.Fatalln(err.Error())
 		panic(err.Error())
+	}
+
+	var bFile *os.File
+	backupFileFullPath := filepath.Join(dbBackupPath, currentDate.Format("2006_01_02"))
+	if bFile, err = os.OpenFile(backupFileFullPath, os.O_CREATE|os.O_RDWR|os.O_TRUNC, os.FileMode(0777)); err != nil {
+		//file create fail
+		return
+	}
+	defer bFile.Close()
+
+	//////////////////////////////////////////////
+	///고객
+	//////////////////////////////////////////////
+	_, err = bFile.Write([]byte(prefixMemStr))
+	if err != nil {
+		fmt.Println("file write fail")
+		return
 	}
 
 	for idx, mem := range memberList {
 		mStr := fmt.Sprintf("(%d,'%s','%s','%s',%d,%d,'%s','%s')", mem.MemberId, mem.MemberName, mem.PhoneNumber, mem.Birth, mem.TotalPoint, mem.VisitCount, mem.CreateDate, mem.UpdateDate)
-		memStr += mStr
-
 		if idx == len(memberList)-1 {
-			memStr += ";"
+			mStr += ";"
 		} else {
-			memStr += ", \n"
+			mStr += ", \n"
+		}
+
+		_, err = bFile.Write([]byte(mStr))
+		if err != nil {
+			fmt.Println("file write fail")
+			return
 		}
 	}
 
+	//////////////////////////////////////////////
+	///매출
+	//////////////////////////////////////////////
+	_, err = bFile.Write([]byte(prefixRvnStr))
+	if err != nil {
+		fmt.Println("file write fail")
+		return
+	}
+
 	if revenueList, err = DbConf.SelectRevenues(); err != nil {
+		log.Fatalln(err.Error())
 		panic(err.Error())
 	}
 	for idx, rvn := range revenueList {
 		rStr := fmt.Sprintf("( %d, %d, %d, %d, %d, '%s','%s')", rvn.MemberId, rvn.Sales, rvn.SubPoint, rvn.AddPoint, rvn.FixedSales, rvn.PayType, rvn.CreateDate)
-		rvnStr += rStr
 
 		if idx == len(revenueList)-1 {
-			rvnStr += ";"
+			rStr += ";"
 		} else {
-			rvnStr += ", \n"
+			rStr += ", \n"
+		}
+
+		_, err = bFile.Write([]byte(rStr))
+		if err != nil {
+			fmt.Println("file write fail")
+			return
 		}
 	}
 
+	//////////////////////////////////////////////
+	///설정
+	//////////////////////////////////////////////
+	_, err = bFile.Write([]byte(prefixSettStr))
+	if err != nil {
+		fmt.Println("file write fail")
+		return
+	}
+
 	if settingList, err = DbConf.SelectSettings(); err != nil {
+		log.Fatalln(err.Error())
 		panic(err.Error())
 	}
 	for idx, sett := range settingList {
 		sStr := fmt.Sprintf("('%s','%s','%s')", sett.SettingType, sett.SettingValue, sett.SettingDescription)
-		SettStr += sStr
 
 		if idx == len(settingList)-1 {
-			SettStr += ";"
+			sStr += ";"
 		} else {
-			SettStr += ", \n"
+			sStr += ", \n"
+		}
+
+		_, err = bFile.Write([]byte(sStr))
+		if err != nil {
+			fmt.Println("file write fail")
+			return
 		}
 	}
 
-	saveStr = prefixMemStr + memStr + "\n\n" + prefixRvnStr + rvnStr + "\n\n" + prefixSettStr + SettStr + "\n\n"
-	createBackupFile(dbBackupPath, currentDate.Format("2006_01_02"), saveStr)
+	bFile.Close()
 
-}
-
-func createBackupFile(backupPath, batchFileName, inputStr string) {
-	backupFileFullPath := filepath.Join(backupPath, batchFileName)
-	//batch file 존재 여부 확인
-	if _, err := os.Stat(backupFileFullPath); err == nil {
-		fmt.Println("file 존재")
-		return
-	} else {
-		if errors.Is(err, os.ErrNotExist) {
-			fmt.Println("file 없음")
-			b := []byte(inputStr)
-
-			f5, err := os.Create(backupFileFullPath)
-			if err != nil {
-				fmt.Println(err)
-				os.Exit(1)
-			}
-
-			n, err := io.WriteString(f5, string(b))
-			if err != nil {
-				fmt.Println(err)
-				os.Exit(1)
-			}
-			fmt.Printf("wrote %d bytes\n", n)
-
-			fmt.Println("backup 파일 생성 완료")
-		} else {
-			panic(err)
-		}
-	}
 }
 
 func clearOldBackupFile(backupPath string, pastDate time.Time) {
@@ -121,19 +139,19 @@ func clearOldBackupFile(backupPath string, pastDate time.Time) {
 
 	//batch file 존재 여부 확인
 	if _, err = os.Stat(backupFileFullPath); err == nil {
-		fmt.Println("file 존재")
+		log.Println("file 존재")
 		if err = os.Remove(backupFileFullPath); err != nil {
 			return
 		}
 
-		fmt.Println("오래된 backup 파일 정리 완료")
+		log.Println("오래된 backup 파일 정리 완료")
 	} else {
 		if errors.Is(err, os.ErrNotExist) {
-			fmt.Println("file 없음")
+			log.Println("file 없음")
 			return
 
 		} else {
-
+			log.Fatalln(err.Error())
 			panic(err)
 		}
 	}

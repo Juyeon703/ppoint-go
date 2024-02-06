@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
+	"ppoint/backup"
+	"ppoint/db"
 	"ppoint/query"
 	"ppoint/service"
 	"ppoint/types"
@@ -82,6 +84,13 @@ func MainPage(DbConf *query.DbConfig) {
 	winMain.MultiPageMainWindow = multiPageMainWindow
 
 	//winMain.updateTitle(winMain.CurrentPageTitle())
+	winMain.Closing().Attach(func(canceled *bool, reason walk.CloseReason) {
+		//todo
+		backup.DbBackup(dbconn)
+
+		//마지막 db connection 종료
+		db.DisConn(DbConf.DbConnection)
+	})
 
 	winMain.Run()
 }
@@ -106,106 +115,4 @@ func (mw *AppMainWindow) aboutAction_Triggered() {
 		"About Walk Multiple Pages Example",
 		"An example that demonstrates a main window that supports multiple pages.",
 		walk.MsgBoxOK|walk.MsgBoxIconInformation)
-}
-
-func test() {
-	/*	walk.AppendToWalkInit(func() {
-			walk.FocusEffect, _ = walk.NewBorderGlowEffect(walk.RGB(0, 63, 255))
-			walk.InteractionEffect, _ = walk.NewDropShadowEffect(walk.RGB(63, 63, 63))
-			walk.ValidationErrorEffect, _ = walk.NewBorderGlowEffect(walk.RGB(255, 0, 0))
-		})
-
-		var inTE, outTE *walk.TextEdit
-		var titleWidth, titleHeight = 1000, 700
-
-		var winMain *walk.MainWindow
-		winMain = new(walk.MainWindow)
-
-		//win.SetWindowPos(winMain.Handle(),
-		//win.HWND_TOPMOST, 0, 0, 0, 0,
-		//win.SWP_NOACTIVATE|win.SWP_NOMOVE|win.SWP_NOSIZE)
-
-		if _, err := (MainWindow{
-			AssignTo: &winMain,
-			Title:    "포인트 프로그램",
-			MinSize:  Size{300, 200},
-			MaxSize:  Size{2000, 1600},
-			Size:     Size{titleWidth, titleHeight},
-			Layout:   VBox{},
-			Children: []Widget{
-				HSplitter{
-					MaxSize: Size{titleWidth, 50},
-					Children: []Widget{
-						PushButton{
-							Text: "포인트 관리",
-							OnClicked: func() {
-								//outTE.SetText(strings.ToUpper(inTE.Text()))
-							},
-						},
-						PushButton{
-							Text: "고객 관리",
-							OnClicked: func() {
-							},
-						},
-						PushButton{
-							Text: "매출 관리",
-							OnClicked: func() {
-							},
-						},
-						PushButton{
-							Text: "설정",
-							OnClicked: func() {
-							},
-						},
-					},
-				}, //end of HSplitter
-				HSplitter{
-					MaxSize: Size{titleWidth, 150},
-					Children: []Widget{
-						//Label{
-						//	Text: "test",
-						//},
-						HSplitter{
-							Children: []Widget{
-								TextEdit{AssignTo: &inTE},
-								TextEdit{AssignTo: &outTE, ReadOnly: true},
-							},
-						},
-						TextEdit{AssignTo: &inTE},
-						TextEdit{AssignTo: &outTE, ReadOnly: true},
-					},
-				}, //end of HSplitter
-				HSplitter{
-					MaxSize: Size{titleWidth, 400},
-					Children: []Widget{
-						TextEdit{AssignTo: &inTE},
-						TextEdit{AssignTo: &outTE, ReadOnly: true},
-					},
-				}, //end of HSplitter
-			}, //end of children_main
-		}).Run(); err != nil {
-			log.Fatal(err)
-		}
-	*/
-	//sample
-	/*	MainWindow{
-		Title: "포인트 프로그램",
-		//MinSize: Size{600, 400},
-		Size:   Size{1000, 700},
-		Layout: VBox{},
-		Children: []Widget{
-			HSplitter{
-				Children: []Widget{
-					TextEdit{AssignTo: &inTE},
-					TextEdit{AssignTo: &outTE, ReadOnly: true},
-				},
-			},
-			PushButton{
-				Text: "SCREAM",
-				OnClicked: func() {
-					outTE.SetText(strings.ToUpper(inTE.Text()))
-				},
-			},
-		},
-	}.Run()*/
 }
