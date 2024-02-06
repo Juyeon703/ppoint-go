@@ -61,6 +61,26 @@ func FindMember(dbconn *query.DbConfig, name, phoneNumber string) (*dto.MemberDt
 	return member, nil
 }
 
+func FindMemberPhoneNumber(dbconn *query.DbConfig, phoneNumber string) (*dto.MemberDto, error) {
+	var err error
+	var member = new(dto.MemberDto)
+	if member, err = dbconn.SelectMemberByPhone(phoneNumber); err != nil {
+		return nil, err
+	}
+
+	return member, nil
+}
+
+func FindUpdateMemberPhoneNumber(dbconn *query.DbConfig, phoneNumber, memberId string) (*dto.MemberDto, error) {
+	var err error
+	var member = new(dto.MemberDto)
+	if member, err = dbconn.SelectUpdateMemberByPhone(phoneNumber, memberId); err != nil {
+		return nil, err
+	}
+
+	return member, nil
+}
+
 func FindSumSalesOfMember(dbconn *query.DbConfig, memberId int) (*dto.MemberSumSalesDto, error) {
 	var err error
 	var result = new(dto.MemberSumSalesDto)

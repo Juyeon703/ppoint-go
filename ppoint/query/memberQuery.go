@@ -48,6 +48,26 @@ func (dbc *DbConfig) SelectMembers() ([]types.Member, error) {
 	return members, nil
 }
 
+func (dbc *DbConfig) SelectMemberByPhone(phoneNumber string) (*dto.MemberDto, error) {
+	var member dto.MemberDto
+	err := dbc.DbConnection.QueryRow("SELECT * FROM ppoint.member WHERE phone_number=?", phoneNumber).
+		Scan(&member.MemberId, &member.MemberName, &member.PhoneNumber, &member.Birth, &member.TotalPoint, &member.VisitCount, &member.CreateDate, &member.UpdateDate)
+	if err != nil {
+		return nil, err
+	}
+	return &member, nil
+}
+
+func (dbc *DbConfig) SelectUpdateMemberByPhone(phoneNumber, memberId string) (*dto.MemberDto, error) {
+	var member dto.MemberDto
+	err := dbc.DbConnection.QueryRow("SELECT * FROM ppoint.member WHERE phone_number=? AND member_id != ?", phoneNumber, memberId).
+		Scan(&member.MemberId, &member.MemberName, &member.PhoneNumber, &member.Birth, &member.TotalPoint, &member.VisitCount, &member.CreateDate, &member.UpdateDate)
+	if err != nil {
+		return nil, err
+	}
+	return &member, nil
+}
+
 func (dbc *DbConfig) SelectMemberByPhoneAndName(phoneNumber string, memberName string) (*dto.MemberDto, error) {
 	var member dto.MemberDto
 	err := dbc.DbConnection.QueryRow("SELECT * FROM ppoint.member WHERE phone_number=? AND member_name=?", phoneNumber, memberName).
@@ -59,7 +79,7 @@ func (dbc *DbConfig) SelectMemberByPhoneAndName(phoneNumber string, memberName s
 }
 
 func (dbc *DbConfig) SelectMemberSearch(search string) ([]dto.MemberDto, error) {
-	rows, err := dbc.DbConnection.Query("SELECT * FROM ppoint.member WHERE phone_number LIKE ? or member_name like ?;", "%"+search, "%"+search+"%")
+	rows, err := dbc.DbConnection.Query("SELECT * FROM ppoint.member WHERE phone_number LIKE ? or member_name like ?;", "%"+search+"%", "%"+search+"%")
 	if err != nil {
 		return nil, err
 	}

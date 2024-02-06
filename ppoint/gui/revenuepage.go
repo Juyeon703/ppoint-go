@@ -38,6 +38,7 @@ func newSalesPage(parent walk.Container) (Page, error) {
 		Name:     "매출 관리",
 		Layout:   VBox{},
 		Border:   true,
+		MinSize:  Size{subWidth, subHeight},
 		Children: []Widget{
 			Label{Text: "매출 관리 페이지"},
 			Composite{

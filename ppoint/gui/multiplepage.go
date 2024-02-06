@@ -95,13 +95,15 @@ func NewMultiPageMainWindow(cfg *MultiPageMainWindowConfig) (*MultiPageMainWindo
 					},
 				},
 			},*/
-			ScrollView{
-				HorizontalFixed: true,
-				Layout:          VBox{MarginsZero: true},
+			//ScrollView{
+			Composite{
+				//HorizontalFixed: true,
+				Layout: VBox{MarginsZero: true},
 				Children: []Widget{
 					Composite{
-						Border: true,
-						Layout: Grid{Columns: 10, Margins: Margins{0, 0, 0, 0}},
+						//Border: true,
+						Layout: HBox{},
+						//Layout: Grid{Columns: 10, Margins: Margins{100, 100, 100, 100}},
 						Children: []Widget{
 							ToolBar{
 								AssignTo:    &mpmw.navTB,

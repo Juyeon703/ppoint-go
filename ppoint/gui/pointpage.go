@@ -38,8 +38,10 @@ func newPointPage(parent walk.Container) (Page, error) {
 	if err := (Composite{
 		AssignTo: &p.Composite,
 		Name:     "포인트 관리",
+		Font:     Font{Bold: true},
 		Layout:   VBox{},
 		Border:   true,
+		MinSize:  Size{subWidth, subHeight},
 		Children: []Widget{
 			Label{Text: "포인트 관리 페이지"},
 			Composite{
@@ -127,7 +129,7 @@ func newPointPage(parent walk.Container) (Page, error) {
 					Composite{
 						Border:  true,
 						Layout:  VBox{},
-						MaxSize: Size{Width: 300, Height: 1000},
+						MaxSize: Size{Width: (subWidth / 2) - 100, Height: subHeight},
 						DataBinder: DataBinder{
 							AssignTo:       &mudb,
 							Name:           "updateMember",
@@ -295,21 +297,29 @@ func newPointPage(parent walk.Container) (Page, error) {
 													fmt.Println("==> update정보 : ", mudb.DataSource())
 													if nameTemp != updateMember.MemberName || phoneTemp != updateMember.PhoneNumber || birthTemp != updateMember.Birth ||
 														int(pointTemp) != updateMember.TotalPoint || int(countTemp) != updateMember.VisitCount {
-														if err := service.MemberUpdate(dbconn, updateMember, int(pointTemp)); err != nil {
-															panic(err)
+
+														if existMember, err := service.FindUpdateMemberPhoneNumber(dbconn, updateMember.PhoneNumber, memberIdLE.Text()); existMember != nil {
+															MsgBox("알림", "이미 존재하는 핸드폰 번호 입니다.")
+															log.Println(err)
+														} else {
+															if err := service.MemberUpdate(dbconn, updateMember, int(pointTemp)); err != nil {
+																MsgBox("알림", "고객 등록에 실패하였습니다.")
+																log.Fatalln(err)
+															} else {
+																udtLE.SetText(utils.CurrentTime())
+																memberNameLE.SetReadOnly(true)
+																phoneNumberLE.SetReadOnly(true)
+																birthLE.SetReadOnly(true)
+																pointNE.SetReadOnly(true)
+																countNE.SetReadOnly(true)
+																updateBtn.SetText(updateTitle)
+																cancelBtn.SetVisible(false)
+																MsgBox("수정 완료", "회원 정보가 변경되었습니다.")
+																beforePointNE.SetValue(float64(updateMember.TotalPoint))
+																afterPointNE.SetValue(float64(updateMember.TotalPoint))
+																clickedPT = revenueInfoClear(salesNE, subPointNE, fixedSalesNE, addPointNE, radioCardBtn, radioCashBtn)
+															}
 														}
-														udtLE.SetText(utils.CurrentTime())
-														memberNameLE.SetReadOnly(true)
-														phoneNumberLE.SetReadOnly(true)
-														birthLE.SetReadOnly(true)
-														pointNE.SetReadOnly(true)
-														countNE.SetReadOnly(true)
-														updateBtn.SetText(updateTitle)
-														cancelBtn.SetVisible(false)
-														MsgBox("수정 완료", "회원 정보가 변경되었습니다.")
-														beforePointNE.SetValue(float64(updateMember.TotalPoint))
-														afterPointNE.SetValue(float64(updateMember.TotalPoint))
-														clickedPT = revenueInfoClear(salesNE, subPointNE, fixedSalesNE, addPointNE, radioCardBtn, radioCashBtn)
 													}
 												}
 											}
@@ -341,9 +351,18 @@ func newPointPage(parent walk.Container) (Page, error) {
 						},
 					},
 					Composite{
+						MaxSize: Size{Width: 1, Height: subHeight},
+						Layout:  VBox{},
+						Children: []Widget{
+							Label{
+								Visible: false,
+							},
+						},
+					},
+					Composite{
 						Border:  true,
 						Layout:  VBox{},
-						MaxSize: Size{Width: 300, Height: 1000},
+						MaxSize: Size{Width: subWidth, Height: subHeight},
 						DataBinder: DataBinder{
 							AssignTo:       &ppdb,
 							Name:           "revenue",
@@ -374,7 +393,7 @@ func newPointPage(parent walk.Container) (Page, error) {
 								Layout: HBox{},
 								Children: []Widget{
 									Label{
-										Text: "상품 금액 : ",
+										Text: "매출 금액 : ",
 									},
 									NumberEdit{
 										AssignTo: &salesNE,
@@ -474,6 +493,14 @@ func newPointPage(parent walk.Container) (Page, error) {
 									},
 								},
 							},
+							Composite{
+								Layout: HBox{},
+								Children: []Widget{
+									VSpacer{
+										Size: 21,
+									},
+								},
+							},
 							PushButton{
 								Text: "확인/적립",
 								OnClicked: func() {
@@ -485,6 +512,27 @@ func newPointPage(parent walk.Container) (Page, error) {
 											return
 										}
 										fmt.Println(revenue)
+
+										//if int(pointNE.Value()) <= 0 {
+										//	MsgBox("알림", "사용가능한 보유 포인트가 없습니다.")
+										//	return
+										//}
+										//
+										//if int(pointNE.Value()) < nPointLimit {
+										//	MsgBox("알림", "사용가능한 포인트가 "+strconv.Itoa(nPointLimit)+"p 보다 많아야 합니다.")
+										//	return
+										//}
+										//
+										//if revenue.Sales <= 0 {
+										//	MsgBox("알림", "매출 금액을 입력해주세요.")
+										//	return
+										//}
+										//
+										//if revenue.SubPoint > int(pointNE.Value()) {
+										//	MsgBox("알림", "보유 포인트가 부족합니다.")
+										//	return
+										//}
+
 										if revenue.Sales <= 0 || revenue.SubPoint > int(pointNE.Value()) {
 											MsgBox("error", "error") //////////////////////////////////////////////////////////////////////////
 										} else {

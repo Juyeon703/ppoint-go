@@ -1,6 +1,7 @@
 package gui
 
 import (
+	"fmt"
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
 	"log"
@@ -75,15 +76,23 @@ func RunMemberAddDialog(owner walk.Form, member *dto.MemberAddDto) (int, error) 
 						AssignTo: &acceptPB,
 						Text:     "OK",
 						OnClicked: func() {
+							fmt.Println("RunMemberAddDialog onclicked start")
 							if err := db.Submit(); err != nil {
+								log.Fatalln(err.Error())
 								panic(err)
-								log.Print(err)
 								return
 							}
-							if err := service.MemberAdd(dbconn, member); err != nil {
-								panic(err.Error())
+							if existMember, err := service.FindMemberPhoneNumber(dbconn, member.PhoneNumber); existMember != nil {
+								MsgBox("알림", "이미 존재하는 핸드폰 번호 입니다.")
+							} else {
+								if err = service.MemberAdd(dbconn, member); err != nil {
+									MsgBox("알림", "고객 등록에 실패하였습니다.")
+								} else {
+									dlg.Accept()
+								}
+
 							}
-							dlg.Accept()
+							log.Println("RunMemberAddDialog onclicked end")
 						},
 					},
 					PushButton{

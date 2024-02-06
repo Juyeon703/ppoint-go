@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
+	"log"
 	"ppoint/backup"
 	"ppoint/db"
 	"ppoint/query"
@@ -20,7 +21,9 @@ type AppMainWindow struct {
 var winMain *AppMainWindow
 var dbconn *query.DbConfig
 var titleWidth, titleHeight = 1000, 800
-var cashSV, cardSV int
+var subWidth, subHeight = 950, 700
+var toolbarHeight = 60
+var cashSV, cardSV, nPointLimit int
 
 func MainPage(DbConf *query.DbConfig) {
 	dbconn = DbConf
@@ -35,7 +38,10 @@ func MainPage(DbConf *query.DbConfig) {
 	if cardSV, err = service.FindSettingValue(dbconn, types.SettingCard); err != nil {
 		panic(err)
 	}
-	fmt.Println("현금 적립 %", cashSV, "카드 적립 %", cardSV)
+	if nPointLimit, err = service.FindSettingValue(dbconn, types.SettingPointLimit); err != nil {
+		panic(err)
+	}
+	fmt.Printf("현금 적립 %d, 카드 적립 %d, 포인트 사용 제한 : %dp\n", cashSV, cardSV, nPointLimit)
 
 	//multiple page main
 	var multiPageMainWindow *MultiPageMainWindow
@@ -64,8 +70,8 @@ func MainPage(DbConf *query.DbConfig) {
 		//	winMain.updateTitle(winMain.CurrentPageTitle())
 		//},
 		ToolBar: ToolBar{
-			MinSize: Size{titleWidth, 100},
-			MaxSize: Size{titleWidth, 100},
+			MinSize: Size{titleWidth, toolbarHeight},
+			MaxSize: Size{titleWidth, toolbarHeight},
 		},
 
 		//페이지탭
@@ -79,6 +85,7 @@ func MainPage(DbConf *query.DbConfig) {
 
 	multiPageMainWindow, err = NewMultiPageMainWindow(cfg)
 	if err != nil {
+		log.Fatalln(err.Error())
 		panic(err)
 	}
 	winMain.MultiPageMainWindow = multiPageMainWindow
