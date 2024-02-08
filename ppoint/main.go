@@ -42,7 +42,6 @@ func init() {
 	}
 	DbConf.Logue = log
 
-	// test 2일 -- 수정 필요
 	if err = service.ChangePointNoVisitFor3Month(DbConf); err != nil {
 		log.Error(err)
 		panic(err)

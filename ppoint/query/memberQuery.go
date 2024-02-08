@@ -23,9 +23,8 @@ func (dbc *DbConfig) UpdateMemberByPoint(id, changePoint int) error {
 	return err
 }
 
-// test 2일 -- 수정 필요
 func (dbc *DbConfig) Update0PointMemberNoVisitFor3Month() error {
-	_, err := dbc.DbConnection.Exec("UPDATE ppoint.member SET total_point=0 WHERE total_point != 0 and update_date <= DATE_ADD(now(), INTERVAL -2 DAY)")
+	_, err := dbc.DbConnection.Exec("UPDATE ppoint.member SET total_point=0 WHERE total_point != 0 and update_date <= DATE_ADD(now(), INTERVAL -3 MONTH)")
 	return err
 }
 

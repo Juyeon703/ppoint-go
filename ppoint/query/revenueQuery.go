@@ -11,9 +11,8 @@ func (dbc *DbConfig) CreateRevenue(memberId, sales, subPoint, addPoint, fixedSal
 	return err
 }
 
-// test 2일 -- 수정 필요
 func (dbc *DbConfig) CreateRevenueChangePointNoVisitFor3Month() error {
-	_, err := dbc.DbConnection.Exec("INSERT INTO `ppoint`.`revenue` (`member_id`, `sales`, `sub_point`, `add_point`, `fixed_sales`, `pay_type`) SELECT member_id, 0, total_point, 0, 0, '소멸' from ppoint.member where total_point != 0 and update_date <= DATE_ADD(now(), INTERVAL -2 DAY);")
+	_, err := dbc.DbConnection.Exec("INSERT INTO `ppoint`.`revenue` (`member_id`, `sales`, `sub_point`, `add_point`, `fixed_sales`, `pay_type`) SELECT member_id, 0, total_point, 0, 0, '소멸' from ppoint.member where total_point != 0 and update_date <= DATE_ADD(now(), INTERVAL -3 MONTH);")
 	return err
 }
 
