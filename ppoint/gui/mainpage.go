@@ -8,6 +8,7 @@ import (
 	"ppoint/db"
 	"ppoint/logue"
 	"ppoint/query"
+	"sync"
 )
 
 type AppMainWindow struct {
@@ -21,6 +22,8 @@ var log *logue.Logbook
 var titleWidth, titleHeight = 950, 700
 var subWidth, subHeight = 950, 700
 var toolbarHeight = 60
+var cfg *MultiPageMainWindowConfig
+var multiPageMainWindow *MultiPageMainWindow
 
 func MainPage(DbConf *query.DbConfig) {
 	dbconn = DbConf
@@ -28,14 +31,14 @@ func MainPage(DbConf *query.DbConfig) {
 	walk.Resources.SetRootDirPath("img")
 	var err error
 
+	//main window
 	winMain = new(AppMainWindow)
 
 	//multiple page main
-	var multiPageMainWindow *MultiPageMainWindow
 	multiPageMainWindow = new(MultiPageMainWindow)
 
 	//Multi Page Main Window Config
-	cfg := &MultiPageMainWindowConfig{
+	cfg = &MultiPageMainWindowConfig{
 		Title: "PPOINT",
 		Name:  "mainWindow",
 		Size:  Size{titleWidth, titleHeight},
@@ -49,11 +52,11 @@ func MainPage(DbConf *query.DbConfig) {
 						OnTriggered: func() { winMain.aboutAction_Triggered() },
 					},
 				},
+
+				//페이지 변경시마다 업데이트
+				//OnCurrentPageChanged: func() {
 			},
 		},
-
-		//페이지 변경시마다 업데이트
-		//OnCurrentPageChanged: func() {
 		//	winMain.updateTitle(winMain.CurrentPageTitle())
 		//},
 		ToolBar: ToolBar{
@@ -73,19 +76,42 @@ func MainPage(DbConf *query.DbConfig) {
 
 	multiPageMainWindow, err = NewMultiPageMainWindow(cfg)
 	if err != nil {
-		log.Error(err.Error())
+		log.Error("Main Window Create 실패", err.Error())
 		panic(err)
 	}
 	winMain.MultiPageMainWindow = multiPageMainWindow
 
 	//winMain.updateTitle(winMain.CurrentPageTitle())
 	winMain.Closing().Attach(func(canceled *bool, reason walk.CloseReason) {
-		//todo
-		backup.DbBackup(dbconn)
+		if reason == walk.CloseReasonUser {
+			*canceled = true
+		}
+
+		var wg sync.WaitGroup
+		var backupResult chan bool
+		backupResult = make(chan bool)
+
+		wg.Add(1)
+
+		go func() {
+			backup.DbBackup(dbconn, &wg, backupResult)
+			db.DisConn(DbConf.DbConnection)
+		}()
 
 		//마지막 db connection 종료
-		db.DisConn(DbConf.DbConnection)
-		log.Debug("MAIN ClOSE")
+		flag := true
+		for flag {
+			select {
+			case <-backupResult:
+				flag = false
+				break
+			default:
+				MsgBox("알림", "데이터 백업 중입니다. 잠시 기다려주세요")
+			}
+		}
+
+		close(backupResult)
+		log.Debug("포인트 프로그램 CLOSE")
 	})
 
 	winMain.Run()

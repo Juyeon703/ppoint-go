@@ -201,12 +201,12 @@ func newSettingPage(parent walk.Container) (Page, error) {
 										//err
 										MsgBox("에러", "저장에 실패하였습니다")
 									} else {
-										log.Infof("[Update]UpdateSettingByType() // param{settingType : %s, settingValue : %s}", settType, inputValue)
+										log.Infof("(설정 정보 조회) >>>> TYPE : [%s], VALUE : [%s]}", settType, inputValue)
 
 									}
 								}
 
-								MsgBox("알림", "저장되었습니다.")
+								MsgBox("알림", "설정 정보가 저장되었습니다.")
 							} else {
 								MsgBox("알림", "값을 입력해주세요.")
 							}

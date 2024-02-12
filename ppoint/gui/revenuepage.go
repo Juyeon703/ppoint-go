@@ -5,6 +5,7 @@ import (
 	. "github.com/lxn/walk/declarative"
 	"ppoint/dto"
 	"ppoint/service"
+	"ppoint/utils"
 	"sort"
 	"strconv"
 	"time"
@@ -21,7 +22,7 @@ func newSalesPage(parent walk.Container) (Page, error) {
 	var datedb *walk.DataBinder
 	var tvResultLabel *walk.Label
 	var startDateSearchDE, endDateSearchDE *walk.DateEdit
-	var sumNEcc, sumNEcard, sumNEcash, sumNEaddP, sumNEsubP *walk.NumberEdit
+	var sumNEcc, sumNEcard, sumNEcash, sumNEaddP, sumNEsubP *walk.LineEdit
 	var dateSearch = &SearchDate{Sdt: time.Now(), Edt: time.Now()}
 	dateNow := time.Now().Format("2006-01-02")
 	model := NewRevenuesModel(dateNow, dateNow, moveId)
@@ -150,48 +151,53 @@ func newSalesPage(parent walk.Container) (Page, error) {
 							Label{
 								Text: "총 매출 금액(현금+카드)",
 							},
-							NumberEdit{
+							LineEdit{
 								AssignTo: &sumNEcc,
-								Suffix:   " 원",
+								//Suffix:   " 원",
 								ReadOnly: true,
 							},
 							Label{
 								Text: "총 매출 금액(카드)",
 							},
-							NumberEdit{
+							LineEdit{
 								AssignTo: &sumNEcard,
-								Suffix:   " 원",
+								//Suffix:   " 원",
 								ReadOnly: true,
 							},
 							Label{
 								Text: "총 매출 금액(현금)",
 							},
-							NumberEdit{
+							LineEdit{
 								AssignTo: &sumNEcash,
-								Suffix:   " 원",
+								//Suffix:   " 원",
 								ReadOnly: true,
 							},
 							Label{
 								Text: "총 적립 포인트",
 							},
-							NumberEdit{
+							LineEdit{
 								AssignTo: &sumNEaddP,
-								Suffix:   " p",
+								//Suffix:   " p",
 								ReadOnly: true,
 							},
 							Label{
 								Text: "총 사용 포인트(소멸 제외)",
 							},
-							NumberEdit{
+							LineEdit{
 								AssignTo: &sumNEsubP,
-								Suffix:   " p",
+								//Suffix:   " p",
 								ReadOnly: true,
 								OnBoundsChanged: func() {
-									sumNEcc.SetValue(float64(sumDto.SumSales))
+									/*sumNEcc.SetValue(float64(sumDto.SumSales))
 									sumNEcard.SetValue(float64(sumDto.SumCard))
 									sumNEcash.SetValue(float64(sumDto.SumCash))
 									sumNEaddP.SetValue(float64(sumDto.SumAddP))
-									sumNEsubP.SetValue(float64(sumDto.SumSubP))
+									sumNEsubP.SetValue(float64(sumDto.SumSubP))*/
+									sumNEcc.SetText(utils.MoneyConverter(sumDto.SumSales) + " 원")
+									sumNEcard.SetText(utils.MoneyConverter(sumDto.SumCard) + " 원")
+									sumNEcash.SetText(utils.MoneyConverter(sumDto.SumCash) + " 원")
+									sumNEaddP.SetText(utils.MoneyConverter(sumDto.SumAddP) + " P")
+									sumNEsubP.SetText(utils.MoneyConverter(sumDto.SumSubP) + " P")
 								},
 							},
 						},
@@ -215,7 +221,7 @@ type SearchDate struct {
 	Edt time.Time
 }
 
-func tvRevenueReloading(dateSearch *SearchDate, memberId int, tv *walk.TableView, tvResultLabel *walk.Label, datedb *walk.DataBinder, sumNEcc, sumNEcard, sumNEcash, sumNEaddP, sumNEsubP *walk.NumberEdit) *RevenuesModel {
+func tvRevenueReloading(dateSearch *SearchDate, memberId int, tv *walk.TableView, tvResultLabel *walk.Label, datedb *walk.DataBinder, sumNEcc, sumNEcard, sumNEcash, sumNEaddP, sumNEsubP *walk.LineEdit) *RevenuesModel {
 	if err := datedb.Submit(); err != nil {
 		log.Error(err.Error())
 		return nil
@@ -234,17 +240,23 @@ func tvRevenueReloading(dateSearch *SearchDate, memberId int, tv *walk.TableView
 	return model
 }
 
-func SumInfoLoading(startDate, endDate string, memberId int, sumNEcc, sumNEcard, sumNEcash, sumNEaddP, sumNEsubP *walk.NumberEdit) error {
+func SumInfoLoading(startDate, endDate string, memberId int, sumNEcc, sumNEcard, sumNEcash, sumNEaddP, sumNEsubP *walk.LineEdit) error {
 	var err error
 	var result *dto.SumSalesPointDto
 	if result, err = service.FindSumSalesPoint(dbconn, startDate, endDate, memberId); err != nil {
 		return err
 	}
-	sumNEcc.SetValue(float64(result.SumSales))
-	sumNEcard.SetValue(float64(result.SumCard))
-	sumNEcash.SetValue(float64(result.SumCash))
-	sumNEaddP.SetValue(float64(result.SumAddP))
-	sumNEsubP.SetValue(float64(result.SumSubP))
+	/*	sumNEcc.SetText(utils.MoneyConverter(result.SumSales))
+		sumNEcard.SetText(utils.MoneyConverter(result.SumCard))
+		sumNEcash.SetText(utils.MoneyConverter(result.SumCash))
+		sumNEaddP.SetText(utils.MoneyConverter(result.SumAddP))
+		sumNEsubP.SetText(utils.MoneyConverter(result.SumSubP))*/
+
+	sumNEcc.SetText(utils.MoneyConverter(result.SumSales) + " 원")
+	sumNEcard.SetText(utils.MoneyConverter(result.SumCard) + " 원")
+	sumNEcash.SetText(utils.MoneyConverter(result.SumCash) + " 원")
+	sumNEaddP.SetText(utils.MoneyConverter(result.SumAddP) + " P")
+	sumNEsubP.SetText(utils.MoneyConverter(result.SumSubP) + " P")
 	return nil
 }
 

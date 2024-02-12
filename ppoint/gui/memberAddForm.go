@@ -74,11 +74,13 @@ func RunMemberAddDialog(owner walk.Form, member *dto.MemberAddDto) (int, error) 
 						AssignTo: &acceptPB,
 						Text:     "OK",
 						OnClicked: func() {
+							log.Debugf("(고객 등록 DIALOG) >>> START")
 							if err := db.Submit(); err != nil {
 								log.Error(err.Error())
 								panic(err)
 								return
 							}
+
 							if existMember, err := service.FindMemberPhoneNumber(dbconn, member.PhoneNumber); existMember != nil {
 								MsgBox("알림", "이미 존재하는 핸드폰 번호 입니다.")
 							} else {
@@ -89,6 +91,7 @@ func RunMemberAddDialog(owner walk.Form, member *dto.MemberAddDto) (int, error) 
 								}
 
 							}
+							log.Debugf("(고객 등록 DIALOG) >>> END")
 						},
 					},
 					PushButton{

@@ -1,9 +1,9 @@
 package dto
 
 type SumSalesPointDto struct {
-	SumSales int
-	SumCard  int
-	SumCash  int
-	SumAddP  int
-	SumSubP  int
+	SumSales int64
+	SumCard  int64
+	SumCash  int64
+	SumAddP  int64
+	SumSubP  int64
 }

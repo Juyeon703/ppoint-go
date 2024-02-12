@@ -20,15 +20,14 @@ func RevenueAdd(dbconn *query.DbConfig, revenueDto *dto.RevenueAddDto) error {
 		if result, err = dbconn.SelectSettingBySettingType(types.SettingCard); err != nil {
 			return err
 		}
-		log.Debug("[Select]SelectSettingBySettingType(card)")
 	} else if revenueDto.PayType == types.Cash {
 		if result, err = dbconn.SelectSettingBySettingType(types.SettingCash); err != nil {
 			return err
 		}
-		log.Debug("[Select]SelectSettingBySettingType(cash)")
 	} else {
 		return err
 	}
+	log.Debugf("(결제 타입 조회) 곁제 타입 :[ %s ], 적립 퍼센트 :[ %s ]", revenueDto.PayType, result+" %")
 
 	settingValue, _ := strconv.Atoi(result)
 	if revenueDto.SubPoint == 0 {
@@ -43,15 +42,19 @@ func RevenueAdd(dbconn *query.DbConfig, revenueDto *dto.RevenueAddDto) error {
 		fixedSalesTemp = revenueDto.Sales - revenueDto.SubPoint
 		changePoint = -(revenueDto.SubPoint)
 	}
+
 	if err = dbconn.UpdateMemberByPoint(revenueDto.MemberId, changePoint); err != nil {
+		log.Error("(포인트 적립/사용) >>>> 사용자 포인트 정보 업데이트 실패  : [%v]", err)
 		return err
 	}
-	log.Infof("[Update]UpdateMemberByPoint() // param{memberId : %d, point : %d}", revenueDto.MemberId, changePoint)
+	log.Debug("(포인트 적립/사용) >>>> 사용자 포인트 정보 업데이트")
+
 	if err = dbconn.CreateRevenue(revenueDto.MemberId, revenueDto.Sales, revenueDto.SubPoint, addPointTemp, fixedSalesTemp, revenueDto.PayType); err != nil {
+		log.Error("(포인트 적립/사용) >>>> 매출 정보 생성 실패 : [%v]", err)
 		return err
 	}
-	log.Infof("[Create]CreateRevenue() // param{memberId : %d, sales : %d, subPoint : %d, addPoint : %d, fixedSales : %d, payType : %s}",
-		revenueDto.MemberId, revenueDto.Sales, revenueDto.SubPoint, addPointTemp, fixedSalesTemp, revenueDto.PayType)
+
+	log.Debugf("(포인트 적립/사용) >>>> memberId : [%d], sales : [%d], subPoint : [%d], addPoint : [%d], fixedSales : [%d], payType : [%s]", revenueDto.MemberId, revenueDto.Sales, revenueDto.SubPoint, addPointTemp, fixedSalesTemp, revenueDto.PayType)
 	return nil
 }
 
@@ -74,7 +77,7 @@ func PointEdit(dbconn *query.DbConfig, memberId string, originPoint, newPoint in
 	if err = dbconn.CreateRevenue(result, 0, subPoint, addPoint, 0, "포인트 변경"); err != nil {
 		return err
 	}
-	log.Infof("[Create]CreateRevenue() // param{memberId : %d, subPoint : %d, addPoint : %d, payType : 포인트 변경}", result, subPoint, addPoint)
+	log.Infof("(포인트 정보 수정) >>>  memberId : [%d], subPoint : [%d], addPoint : [%d], payType : [포인트 변경]", result, subPoint, addPoint)
 	return nil
 }
 
@@ -85,17 +88,18 @@ func FindRevenueList(dbconn *query.DbConfig, startDate, endDate string, memberId
 
 	if memberId != 0 {
 		if revenueList, err = dbconn.SelectRevenuesByMember(memberId); err != nil {
+			log.Debugf("(SelectRevenuesByMember) >>>  fail memberId: [%d], err : [%v]", memberId, err)
 			return nil, err
 		}
-		log.Debugf("[Select]SelectRevenuesByMember() // param{memberId : %d}", memberId)
 
 	} else {
 		if revenueList, err = dbconn.SelectRevenuesByCustomDate(startDate, endDate); err != nil {
+			log.Debugf("(SelectRevenuesByCustomDate) >>>  fail startDate : [%s], endDate : [%s]", startDate, endDate)
 			return nil, err
 		}
-		log.Debugf("[Select]SelectRevenuesByCustomDate() // param{startDate : %s, endDate : %s}", startDate, endDate)
-
 	}
+
+	log.Debugf("(매출 정보 조회) >>> startDate : [%s], endDate : [%s]", startDate, endDate)
 	return revenueList, nil
 }
 
@@ -106,16 +110,16 @@ func FindSumSalesPoint(dbconn *query.DbConfig, startDate, endDate string, member
 
 	if memberId != 0 {
 		if result, err = dbconn.SelectSumSalesPointByMemberId(memberId); err != nil {
+			log.Debugf("(SelectSumSalesPointByMemberId) >>>  fail memberId: [%d], err : [%v]", memberId, err)
 			return nil, err
 		}
-		log.Debugf("[Select]SelectSumSalesPointByMemberId() // param{memberId : %d}", memberId)
-
 	} else {
 		if result, err = dbconn.SelectSumSalesPointByCustomDate(startDate, endDate); err != nil {
+			log.Debugf("(SelectSumSalesPointByCustomDate) >>>  fail startDate : [%s], endDate : [%s]", startDate, endDate)
 			return nil, err
 		}
-		log.Debugf("[Select]SelectSumSalesPointByCustomDate() // param{startDate : %s, endDate : %s}", startDate, endDate)
 	}
 
+	log.Debugf("(매출 정보 SUM 조회) >>> startDate : [%s], endDate : [%s]", startDate, endDate)
 	return result, nil
 }

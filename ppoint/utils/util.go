@@ -1,9 +1,11 @@
 package utils
 
 import (
-	"fmt"
+	"math"
 	"os"
 	"regexp"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -36,7 +38,7 @@ func RegExpPhoneNum(str string) bool {
 }
 
 func PhoneNumAddHyphen(text string) string {
-	fmt.Println(text)
+	//fmt.Println(text)
 	rtStr := ""
 	for idx, str := range text {
 		rtStr += string(str)
@@ -50,7 +52,7 @@ func PhoneNumAddHyphen(text string) string {
 			}
 		}
 	}
-	fmt.Println(rtStr)
+	//fmt.Println(rtStr)
 	return rtStr
 }
 
@@ -67,4 +69,35 @@ func CreateFilePath(fname string) error {
 	}
 
 	return nil
+}
+
+func MoneyConverter(v int64) string {
+	sign := ""
+
+	// Min int64 can't be negated to a usable value, so it has to be special cased.
+	if v == math.MinInt64 {
+		return "-9,223,372,036,854,775,808"
+	}
+
+	if v < 0 {
+		sign = "-"
+		v = 0 - v
+	}
+
+	parts := []string{"", "", "", "", "", "", ""}
+	j := len(parts) - 1
+
+	for v > 999 {
+		parts[j] = strconv.FormatInt(v%1000, 10)
+		switch len(parts[j]) {
+		case 2:
+			parts[j] = "0" + parts[j]
+		case 1:
+			parts[j] = "00" + parts[j]
+		}
+		v = v / 1000
+		j--
+	}
+	parts[j] = strconv.Itoa(int(v))
+	return sign + strings.Join(parts[j:], ",")
 }

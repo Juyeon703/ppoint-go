@@ -62,9 +62,11 @@ func RunMemberSearchDialog(owner walk.Form, memberList []dto.MemberDto,
 								memberIdNE.SetValue(memberIdFl)
 								memberIdLE.SetText(fmt.Sprintf("%v", model.Value(index[0], 0)))
 								if total, err = service.FindSumSalesOfMember(dbconn, int(memberIdFl)); err != nil {
-									log.Error(err.Error())
+									log.Debugf("(고객 조회) 고객 포인트 합계 조회 실패 >>> [%v]", err)
 									panic(err)
 								}
+								log.Debugf("(고객 조회) 고객 포인트 합계 조회 >>> memberId : [%d], total :[%v]", int(memberIdFl), total)
+
 								totalSalesNE.SetValue(float64(total.TotalSales))
 								totalPointNE.SetValue(float64(total.TotalPoint))
 								memberNameLE.SetText(fmt.Sprintf("%v", model.Value(index[0], 1)))
