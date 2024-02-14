@@ -50,13 +50,13 @@ func RevenueAdd(dbconn *query.DbConfig, revenueDto *dto.RevenueAddDto) error {
 	}
 
 	if err = dbconn.UpdateMemberByPoint(revenueDto.MemberId, changePoint); err != nil {
-		log.Error("(포인트 적립/사용) >>>> 사용자 포인트 정보 업데이트 실패  : [%v]", err)
+		log.Errorf("(포인트 적립/사용) >>>> 사용자 포인트 정보 업데이트 실패  : [%v]", err)
 		return err
 	}
 	log.Debug("(포인트 적립/사용) >>>> 사용자 포인트 정보 업데이트")
 
 	if err = dbconn.CreateRevenue(revenueDto.MemberId, revenueDto.Sales, revenueDto.SubPoint, addPointTemp, fixedSalesTemp, revenueDto.PayType); err != nil {
-		log.Error("(포인트 적립/사용) >>>> 매출 정보 생성 실패 : [%v]", err)
+		log.Errorf("(포인트 적립/사용) >>>> 매출 정보 생성 실패 : [%v]", err)
 		return err
 	}
 

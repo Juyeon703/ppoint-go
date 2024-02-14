@@ -154,7 +154,7 @@ func newSalesPage(parent walk.Container) (Page, error) {
 					}},
 				},
 				Model: model,
-				//TODO:삭제 글씨 클릭시로 변경
+				//TODO:삭제 글씨 클릭시로 변경,,, 현재 index 클릭시 -> col(삭제) 클릭시로 변경 필요
 				OnSelectedIndexesChanged: func() {
 					var point int
 					index := tv.SelectedIndexes()
@@ -166,10 +166,6 @@ func newSalesPage(parent walk.Container) (Page, error) {
 						addPoint, _ := strconv.Atoi(fmt.Sprintf("%v", model.Value(index[0], 6)))
 
 						payType := fmt.Sprintf("%v", model.Value(index[0], 8))
-
-						fmt.Println("//////")
-						fmt.Println(tv.SelectedIndexes())
-						fmt.Println(revenueId, memberId, subPoint, addPoint)
 
 						if payType == types.Card || payType == types.Cash || payType == "포인트" {
 							if cmd, err := RunRevenueDeleteDialog(winMain); err != nil {

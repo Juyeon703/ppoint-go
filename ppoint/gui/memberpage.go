@@ -196,49 +196,51 @@ func newMemberPage(parent walk.Container) (Page, error) {
 											updateBtn.SetText(okTitle)
 											selectBtn.SetText(cancelTitle)
 										} else if updateBtn.Text() == okTitle && !memberNameLE.ReadOnly() {
-											log.Debug("(고객 관리 페이지) >>> 고객 정보 수정 START")
-											if err := mudb.Submit(); err != nil {
-												log.Error(err.Error())
-												panic(err)
-											}
-											if isExistMember.MemberName != updateMember.MemberName || isExistMember.PhoneNumber != updateMember.PhoneNumber ||
-												isExistMember.Birth != updateMember.Birth || isExistMember.TotalPoint != updateMember.TotalPoint ||
-												isExistMember.VisitCount != updateMember.VisitCount {
+											if !utils.RegExpDate(birthLE.Text()) {
+												MsgBox("알림", "생일 날짜 형식이 틀렸습니다.\n 예) 2017-01-01")
+											} else {
+												log.Debug("(고객 관리 페이지) >>> 고객 정보 수정 START")
+												if err := mudb.Submit(); err != nil {
+													log.Error(err.Error())
+													panic(err)
+												}
+												if isExistMember.MemberName != updateMember.MemberName || isExistMember.PhoneNumber != updateMember.PhoneNumber ||
+													isExistMember.Birth != updateMember.Birth || isExistMember.TotalPoint != updateMember.TotalPoint ||
+													isExistMember.VisitCount != updateMember.VisitCount {
 
-												if existMember, err := service.FindUpdateMemberPhoneNumber(dbconn, updateMember.PhoneNumber, memberIdLE.Text()); existMember != nil {
-													if err != nil {
-														log.Errorf("(고객 수정) >>> 중복 조회 실패 >>> [%v]", err)
+													if existMember, err := service.FindUpdateMemberPhoneNumber(dbconn, updateMember.PhoneNumber, memberIdLE.Text()); existMember != nil {
+														if err != nil {
+															log.Errorf("(고객 수정) >>> 중복 조회 실패 >>> [%v]", err)
+														} else {
+															MsgBox("알림", "이미 존재하는 핸드폰 번호 입니다.")
+														}
 													} else {
-														MsgBox("알림", "이미 존재하는 핸드폰 번호 입니다.")
-													}
-												} else {
-													if err := service.MemberUpdate(dbconn, updateMember, isExistMember.TotalPoint); err != nil {
-														MsgBox("알림", "고객 등록에 실패하였습니다.")
-														log.Error(err)
-													} else {
-														isExistMember.MemberName = updateMember.MemberName
-														isExistMember.PhoneNumber = updateMember.PhoneNumber
-														isExistMember.Birth = updateMember.Birth
-														isExistMember.TotalPoint = updateMember.TotalPoint
-														isExistMember.VisitCount = updateMember.VisitCount
-														isExistMember.UpdateDate = utils.CurrentTime()
-														udtLE.SetText(utils.CurrentTime())
-														memberNameLE.SetReadOnly(true)
-														phonenumLE.SetReadOnly(true)
-														birthLE.SetReadOnly(true)
-														pointNE.SetReadOnly(true)
-														countNE.SetReadOnly(true)
-														updateBtn.SetText(updateTitle)
-														selectBtn.SetText(selectTitle)
-														model = tvReloading("", tv, tvResultLabel)
-														//TODO:멤버 수정 생일 에러
-														log.Debugf("(고객 관리 페이지) >>> 고객 정보 수정 : [%v]", updateMember)
-														MsgBox("수정 완료", "["+updateMember.MemberName+"] 회원 정보가 변경되었습니다.")
-														log.Debug("(고객 관리 페이지) >>> 고객 정보 수정 END")
+														if err := service.MemberUpdate(dbconn, updateMember, isExistMember.TotalPoint); err != nil {
+															MsgBox("알림", "고객 등록에 실패하였습니다.")
+															log.Error(err)
+														} else {
+															isExistMember.MemberName = updateMember.MemberName
+															isExistMember.PhoneNumber = updateMember.PhoneNumber
+															isExistMember.Birth = updateMember.Birth
+															isExistMember.TotalPoint = updateMember.TotalPoint
+															isExistMember.VisitCount = updateMember.VisitCount
+															isExistMember.UpdateDate = utils.CurrentTime()
+															udtLE.SetText(utils.CurrentTime())
+															memberNameLE.SetReadOnly(true)
+															phonenumLE.SetReadOnly(true)
+															birthLE.SetReadOnly(true)
+															pointNE.SetReadOnly(true)
+															countNE.SetReadOnly(true)
+															updateBtn.SetText(updateTitle)
+															selectBtn.SetText(selectTitle)
+															model = tvReloading("", tv, tvResultLabel)
+															log.Debugf("(고객 관리 페이지) >>> 고객 정보 수정 : [%v]", updateMember)
+															MsgBox("수정 완료", "["+updateMember.MemberName+"] 회원 정보가 변경되었습니다.")
+															log.Debug("(고객 관리 페이지) >>> 고객 정보 수정 END")
+														}
 													}
 												}
 											}
-
 										}
 									}
 								},

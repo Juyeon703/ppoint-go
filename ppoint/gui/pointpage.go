@@ -314,36 +314,40 @@ func newPointPage(parent walk.Container) (Page, error) {
 													updateBtn.SetText(okTitle)
 													cancelBtn.SetVisible(true)
 												} else if updateBtn.Text() == okTitle && !memberNameLE.ReadOnly() {
-													if err := mudb.Submit(); err != nil {
-														log.Error(err.Error())
-														panic(err)
-													}
-													if nameTemp != updateMember.MemberName || phoneTemp != updateMember.PhoneNumber || birthTemp != updateMember.Birth ||
-														int(pointTemp) != updateMember.TotalPoint || int(countTemp) != updateMember.VisitCount {
+													if !utils.RegExpDate(birthLE.Text()) {
+														MsgBox("알림", "생일 날짜 형식이 틀렸습니다.\n 예) 2017-01-01")
+													} else {
+														if err := mudb.Submit(); err != nil {
+															log.Error(err.Error())
+															panic(err)
+														}
+														if nameTemp != updateMember.MemberName || phoneTemp != updateMember.PhoneNumber || birthTemp != updateMember.Birth ||
+															int(pointTemp) != updateMember.TotalPoint || int(countTemp) != updateMember.VisitCount {
 
-														if existMember, err := service.FindUpdateMemberPhoneNumber(dbconn, updateMember.PhoneNumber, memberIdLE.Text()); existMember != nil {
-															if err != nil {
-																log.Errorf("(고객 수정) >>> 중복 조회 실패 >>> [%v]", err)
+															if existMember, err := service.FindUpdateMemberPhoneNumber(dbconn, updateMember.PhoneNumber, memberIdLE.Text()); existMember != nil {
+																if err != nil {
+																	log.Errorf("(고객 수정) >>> 중복 조회 실패 >>> [%v]", err)
+																} else {
+																	MsgBox("알림", "이미 존재하는 핸드폰 번호 입니다.")
+																}
 															} else {
-																MsgBox("알림", "이미 존재하는 핸드폰 번호 입니다.")
-															}
-														} else {
-															if err := service.MemberUpdate(dbconn, updateMember, int(pointTemp)); err != nil {
-																MsgBox("알림", "고객 등록에 실패하였습니다.")
-																log.Error(err)
-															} else {
-																udtLE.SetText(utils.CurrentTime())
-																memberNameLE.SetReadOnly(true)
-																phoneNumberLE.SetReadOnly(true)
-																birthLE.SetReadOnly(true)
-																pointNE.SetReadOnly(true)
-																countNE.SetReadOnly(true)
-																updateBtn.SetText(updateTitle)
-																cancelBtn.SetVisible(false)
-																MsgBox("수정 완료", "회원 정보가 변경되었습니다.")
-																beforePointNE.SetValue(float64(updateMember.TotalPoint))
-																afterPointNE.SetValue(float64(updateMember.TotalPoint))
-																clickedPT = revenueInfoClear(salesNE, subPointNE, fixedSalesNE, addPointNE, radioCardBtn, radioCashBtn)
+																if err := service.MemberUpdate(dbconn, updateMember, int(pointTemp)); err != nil {
+																	MsgBox("알림", "고객 등록에 실패하였습니다.")
+																	log.Error(err)
+																} else {
+																	udtLE.SetText(utils.CurrentTime())
+																	memberNameLE.SetReadOnly(true)
+																	phoneNumberLE.SetReadOnly(true)
+																	birthLE.SetReadOnly(true)
+																	pointNE.SetReadOnly(true)
+																	countNE.SetReadOnly(true)
+																	updateBtn.SetText(updateTitle)
+																	cancelBtn.SetVisible(false)
+																	MsgBox("수정 완료", "회원 정보가 변경되었습니다.")
+																	beforePointNE.SetValue(float64(updateMember.TotalPoint))
+																	afterPointNE.SetValue(float64(updateMember.TotalPoint))
+																	clickedPT = revenueInfoClear(salesNE, subPointNE, fixedSalesNE, addPointNE, radioCardBtn, radioCashBtn)
+																}
 															}
 														}
 													}
@@ -541,32 +545,18 @@ func newPointPage(parent walk.Container) (Page, error) {
 								OnClicked: func() {
 									if memberIdLE.Text() == "" {
 										MsgBox("선택된 회원 없음", "선택된 회원이 없습니다.")
+									} else if salesNE.Value() <= 0 {
+										MsgBox("알림", "매출 금액을 입력해주세요.")
+									} else if int(subPointNE.Value()) != 0 && int(subPointNE.Value()) < nPointLimit {
+										MsgBox("알림", "사용 포인트가 "+strconv.Itoa(nPointLimit)+"p 보다 많아야 합니다.")
 									} else {
 										if err := ppdb.Submit(); err != nil {
 											log.Error(err)
 											return
 										}
-										//TODO
-										//if int(pointNE.Value()) <= 0 {
-										//	MsgBox("알림", "사용가능한 보유 포인트가 없습니다.")
-										//	return
-										//}
 
-										//if int(pointNE.Value()) < nPointLimit {
-										//	MsgBox("알림", "사용가능한 포인트가 "+strconv.Itoa(nPointLimit)+"p 보다 많아야 합니다.")
-										//	return
-										//}
-
-										if revenue.Sales <= 0 || revenue.SubPoint > int(pointNE.Value()) {
-											if revenue.Sales <= 0 {
-												MsgBox("알림", "매출 금액을 입력해주세요.")
-												return
-											}
-
-											if revenue.SubPoint > int(pointNE.Value()) {
-												MsgBox("알림", "보유 포인트가 부족합니다.")
-												return
-											}
+										if revenue.SubPoint > int(pointNE.Value()) {
+											MsgBox("알림", "보유 포인트가 부족합니다.")
 										} else {
 											if err := service.RevenueAdd(dbconn, revenue); err != nil {
 												log.Error(err.Error())
