@@ -333,8 +333,14 @@ func newMemberPage(parent walk.Container) (Page, error) {
 					{Title: "이름", DataMember: "MemberName"},
 					{Title: "핸드폰번호", DataMember: "PhoneNumber"},
 					{Title: "생일", DataMember: "Birth"},
-					{Title: "보유포인트", DataMember: "TotalPoint", Alignment: AlignFar},
-					{Title: "방문 횟수", DataMember: "VisitCount"},
+					{Title: "보유포인트", DataMember: "TotalPoint", Alignment: AlignFar, FormatFunc: func(value interface{}) string {
+						r, _ := utils.InterfaceToInt64(value)
+						return utils.MoneyConverter(r)
+					}},
+					{Title: "방문 횟수", DataMember: "VisitCount", Alignment: AlignFar, FormatFunc: func(value interface{}) string {
+						r, _ := utils.InterfaceToInt64(value)
+						return utils.MoneyConverter(r)
+					}},
 					{Title: "가입일", DataMember: "CreateDate", Width: 150},
 					{Title: "최근방문일", DataMember: "UpdateDate", Width: 150},
 				},

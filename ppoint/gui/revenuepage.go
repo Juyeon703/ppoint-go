@@ -129,10 +129,22 @@ func newSalesPage(parent walk.Container) (Page, error) {
 					{Title: "매출번호", DataMember: "RevenueId", Hidden: true},
 					{Title: "이름", DataMember: "MemberName"},
 					{Title: "핸드폰번호", DataMember: "PhoneNumber"},
-					{Title: "결제금액", DataMember: "Sales", Alignment: AlignFar},
-					{Title: "사용포인트", DataMember: "SubPoint", Alignment: AlignFar},
-					{Title: "적립포인트", DataMember: "AddPoint", Alignment: AlignFar},
-					{Title: "실제결제금액", DataMember: "FixedSales", Alignment: AlignFar},
+					{Title: "결제금액", DataMember: "Sales", Alignment: AlignFar, FormatFunc: func(value interface{}) string {
+						r, _ := utils.InterfaceToInt64(value)
+						return utils.MoneyConverter(r)
+					}},
+					{Title: "사용포인트", DataMember: "SubPoint", Alignment: AlignFar, FormatFunc: func(value interface{}) string {
+						r, _ := utils.InterfaceToInt64(value)
+						return utils.MoneyConverter(r)
+					}},
+					{Title: "적립포인트", DataMember: "AddPoint", Alignment: AlignFar, FormatFunc: func(value interface{}) string {
+						r, _ := utils.InterfaceToInt64(value)
+						return utils.MoneyConverter(r)
+					}},
+					{Title: "실제결제금액", DataMember: "FixedSales", Alignment: AlignFar, FormatFunc: func(value interface{}) string {
+						r, _ := utils.InterfaceToInt64(value)
+						return utils.MoneyConverter(r)
+					}},
 					{Title: "결제방법", DataMember: "PayType"},
 					{Title: "결제일", DataMember: "CreateDate", Width: 150},
 				},
@@ -146,7 +158,7 @@ func newSalesPage(parent walk.Container) (Page, error) {
 						Text: "통계",
 					},
 					Composite{
-						Layout: HBox{},
+						Layout: Grid{Columns: 8},
 						Children: []Widget{
 							Label{
 								Text: "총 매출 금액(현금+카드)",
@@ -156,6 +168,9 @@ func newSalesPage(parent walk.Container) (Page, error) {
 								//Suffix:   " 원",
 								ReadOnly: true,
 							},
+							HSpacer{
+								Size: 20,
+							},
 							Label{
 								Text: "총 매출 금액(카드)",
 							},
@@ -163,6 +178,9 @@ func newSalesPage(parent walk.Container) (Page, error) {
 								AssignTo: &sumNEcard,
 								//Suffix:   " 원",
 								ReadOnly: true,
+							},
+							HSpacer{
+								Size: 20,
 							},
 							Label{
 								Text: "총 매출 금액(현금)",
@@ -179,6 +197,9 @@ func newSalesPage(parent walk.Container) (Page, error) {
 								AssignTo: &sumNEaddP,
 								//Suffix:   " p",
 								ReadOnly: true,
+							},
+							HSpacer{
+								Size: 20,
 							},
 							Label{
 								Text: "총 사용 포인트(소멸 제외)",
