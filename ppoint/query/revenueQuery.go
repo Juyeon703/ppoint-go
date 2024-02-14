@@ -16,6 +16,11 @@ func (dbc *DbConfig) CreateRevenueChangePointNoVisitFor3Month() error {
 	return err
 }
 
+func (dbc *DbConfig) UpdateRevenue(revenueId int, payType string) error {
+	_, err := dbc.DbConnection.Exec("UPDATE `ppoint`.`revenue` SET sales=0, fixed_sales=0, pay_type=? WHERE revenue_id=?", payType, revenueId)
+	return err
+}
+
 func (dbc *DbConfig) DeleteRevenue(id int) error {
 	_, err := dbc.DbConnection.Exec("DELETE FROM `ppoint`.`revenue` WHERE revenue_id=?;", id)
 	return err

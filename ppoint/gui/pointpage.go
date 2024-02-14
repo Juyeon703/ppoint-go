@@ -35,6 +35,7 @@ func newPointPage(parent walk.Container) (Page, error) {
 	const okTitle = "확인"
 	var nameTemp, phoneTemp, birthTemp string
 	var pointTemp, countTemp float64
+	moveId = 0
 
 	if cashSV, err = service.FindSettingValue(dbconn, types.SettingCash); err != nil {
 		log.Error(err.Error())
@@ -99,7 +100,7 @@ func newPointPage(parent walk.Container) (Page, error) {
 													log.Error(err)
 												} else if cmd == walk.DlgCmdOK {
 													memberInfoClear(memberIdLE, memberNameLE, phoneNumberLE, birthLE, udtLE,
-														memberIdNE, pointNE, countNE, beforePointNE, afterPointNE, totalSalesNE, totalPointNE)
+														memberIdNE, pointNE, countNE, beforePointNE, afterPointNE, totalSalesNE, totalPointNE, addPointNE)
 													clickedPT = revenueInfoClear(salesNE, subPointNE, fixedSalesNE, addPointNE, radioCardBtn, radioCashBtn)
 													if newMember, err = service.FindMember(dbconn, addMember.MemberName, addMember.PhoneNumber); err != nil {
 														log.Debug(err.Error())
@@ -116,7 +117,7 @@ func newPointPage(parent walk.Container) (Page, error) {
 											} else { // 검색 결과 있을 시 새로운 창 호출
 												if cmd, err := RunMemberSearchDialog(winMain, memberList, memberIdLE, memberNameLE,
 													phoneNumberLE, birthLE, udtLE, memberIdNE, pointNE, countNE, beforePointNE,
-													afterPointNE, totalSalesNE, totalPointNE); err != nil {
+													afterPointNE, totalSalesNE, totalPointNE, addPointNE); err != nil {
 													log.Error(err)
 												} else if cmd == walk.DlgCmdOK {
 													searchMember.SetText("")
@@ -172,7 +173,7 @@ func newPointPage(parent walk.Container) (Page, error) {
 												MsgBox("초기화 오류", "수정 중엔 초기화할 수 없습니다.")
 											} else {
 												memberInfoClear(memberIdLE, memberNameLE, phoneNumberLE, birthLE, udtLE,
-													memberIdNE, pointNE, countNE, beforePointNE, afterPointNE, totalSalesNE, totalPointNE)
+													memberIdNE, pointNE, countNE, beforePointNE, afterPointNE, totalSalesNE, totalPointNE, addPointNE)
 											}
 										},
 									},
@@ -545,7 +546,7 @@ func newPointPage(parent walk.Container) (Page, error) {
 											log.Error(err)
 											return
 										}
-
+										//TODO
 										//if int(pointNE.Value()) <= 0 {
 										//	MsgBox("알림", "사용가능한 보유 포인트가 없습니다.")
 										//	return
@@ -556,18 +557,16 @@ func newPointPage(parent walk.Container) (Page, error) {
 										//	return
 										//}
 
-										if revenue.Sales <= 0 {
-											MsgBox("알림", "매출 금액을 입력해주세요.")
-											return
-										}
-
-										if revenue.SubPoint > int(pointNE.Value()) {
-											MsgBox("알림", "보유 포인트가 부족합니다.")
-											return
-										}
-
 										if revenue.Sales <= 0 || revenue.SubPoint > int(pointNE.Value()) {
-											MsgBox("error", "error") //////////////////////////////////////////////////////////////////////////
+											if revenue.Sales <= 0 {
+												MsgBox("알림", "매출 금액을 입력해주세요.")
+												return
+											}
+
+											if revenue.SubPoint > int(pointNE.Value()) {
+												MsgBox("알림", "보유 포인트가 부족합니다.")
+												return
+											}
 										} else {
 											if err := service.RevenueAdd(dbconn, revenue); err != nil {
 												log.Error(err.Error())
@@ -607,7 +606,7 @@ func newPointPage(parent walk.Container) (Page, error) {
 }
 
 func memberInfoClear(memberIdLE, memberNameLE, phoneNumberLE, birthLE, udtLE *walk.LineEdit,
-	memberIdNE, pointNE, countNE, beforePointNE, afterPointNE, totalSalesNE, totalPointNE *walk.NumberEdit) {
+	memberIdNE, pointNE, countNE, beforePointNE, afterPointNE, totalSalesNE, totalPointNE, addPointNE *walk.NumberEdit) {
 	memberIdLE.SetText("")
 	memberNameLE.SetText("")
 	phoneNumberLE.SetText("")
@@ -617,7 +616,7 @@ func memberInfoClear(memberIdLE, memberNameLE, phoneNumberLE, birthLE, udtLE *wa
 	countNE.SetValue(0)
 	memberIdNE.SetValue(0)
 	beforePointNE.SetValue(0)
-	afterPointNE.SetValue(0)
+	afterPointNE.SetValue(0 + addPointNE.Value())
 	totalSalesNE.SetValue(0)
 	totalPointNE.SetValue(0)
 }

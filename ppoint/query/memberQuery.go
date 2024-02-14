@@ -23,6 +23,12 @@ func (dbc *DbConfig) UpdateMemberByPoint(id, changePoint int) error {
 	return err
 }
 
+// TODO: 방문횟수 어떻게?
+func (dbc *DbConfig) UpdateMemberByDelete(id, changePoint int) error {
+	_, err := dbc.DbConnection.Exec("UPDATE `ppoint`.`member` SET total_point=total_point-?, update_date=? WHERE member_id=?", changePoint, utils.CurrentTime(), id)
+	return err
+}
+
 func (dbc *DbConfig) Update0PointMemberNoVisitFor3Month() error {
 	_, err := dbc.DbConnection.Exec("UPDATE ppoint.member SET total_point=0 WHERE total_point != 0 and update_date <= DATE_ADD(now(), INTERVAL -3 MONTH)")
 	return err
@@ -123,6 +129,16 @@ func (dbc *DbConfig) SelectMembersDto() ([]dto.MemberDto, error) {
 	}
 
 	return members, nil
+}
+
+func (dbc *DbConfig) SelectMemberPoint(memberId int) (int, error) {
+	var result int
+	err := dbc.DbConnection.QueryRow("SELECT total_point FROM `ppoint`.`member` WHERE member_id=?", memberId).
+		Scan(&result)
+	if err != nil {
+		return 0, err
+	}
+	return result, nil
 }
 
 func (dbc *DbConfig) DeleteMember(id int) error {

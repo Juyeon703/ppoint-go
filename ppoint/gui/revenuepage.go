@@ -1,10 +1,12 @@
 package gui
 
 import (
+	"fmt"
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
 	"ppoint/dto"
 	"ppoint/service"
+	"ppoint/types"
 	"ppoint/utils"
 	"sort"
 	"strconv"
@@ -147,8 +149,51 @@ func newSalesPage(parent walk.Container) (Page, error) {
 					}},
 					{Title: "결제방법", DataMember: "PayType"},
 					{Title: "결제일", DataMember: "CreateDate", Width: 150},
+					{Title: "#", Width: 40, FormatFunc: func(value interface{}) string {
+						return "삭제"
+					}},
 				},
 				Model: model,
+				//TODO:삭제 글씨 클릭시로 변경
+				OnSelectedIndexesChanged: func() {
+					var point int
+					index := tv.SelectedIndexes()
+
+					if len(index) > 0 {
+						revenueId, _ := strconv.Atoi(fmt.Sprintf("%v", model.Value(index[0], 1)))
+						memberId, _ := strconv.Atoi(fmt.Sprintf("%v", model.Value(index[0], 10)))
+						subPoint, _ := strconv.Atoi(fmt.Sprintf("%v", model.Value(index[0], 5)))
+						addPoint, _ := strconv.Atoi(fmt.Sprintf("%v", model.Value(index[0], 6)))
+
+						payType := fmt.Sprintf("%v", model.Value(index[0], 8))
+
+						fmt.Println("//////")
+						fmt.Println(tv.SelectedIndexes())
+						fmt.Println(revenueId, memberId, subPoint, addPoint)
+
+						if payType == types.Card || payType == types.Cash || payType == "포인트" {
+							if cmd, err := RunRevenueDeleteDialog(winMain); err != nil {
+								log.Error(err)
+							} else if cmd == walk.DlgCmdOK {
+								if point, err = dbconn.SelectMemberPoint(memberId); err != nil {
+									log.Error(err)
+								}
+								log.Debugf("(매출 삭제) 회원 보유 포인트 조회 >>>> memberId : [%d], Point : [%d]", memberId, point)
+								if point-addPoint < 0 {
+									MsgBox("오류", "해당 내역으로 적립된 포인트가 이미 사용되어 해당 내역을 삭제할 수 없습니다.")
+								} else {
+									if err := service.RevenueDelete(dbconn, revenueId, memberId, subPoint, addPoint); err != nil {
+										log.Error(err.Error())
+										panic(err)
+									}
+									model = tvRevenueReloading(dateSearch, moveId, tv, tvResultLabel, datedb, sumNEcc, sumNEcard, sumNEcash, sumNEaddP, sumNEsubP)
+								}
+							}
+						} else {
+							MsgBox("매출 삭제", "삭제할 수 없는 내역입니다.")
+						}
+					}
+				},
 			},
 			Composite{
 				Layout: VBox{},
@@ -257,7 +302,6 @@ func tvRevenueReloading(dateSearch *SearchDate, memberId int, tv *walk.TableView
 		log.Error(err.Error())
 		panic(err.Error())
 	}
-
 	return model
 }
 
@@ -333,6 +377,9 @@ func (r *RevenuesModel) Value(row, col int) interface{} {
 
 	case 9:
 		return revenue.CreateDate
+
+	case 10:
+		return revenue.delete
 	}
 
 	panic("unexpected col")
@@ -382,6 +429,9 @@ func (r *RevenuesModel) Sort(col int, order walk.SortOrder) error {
 
 		case 9:
 			return c(a.CreateDate < b.CreateDate)
+
+		case 10:
+			return c(a.delete < b.delete)
 		}
 
 		panic("unreachable")
@@ -411,6 +461,7 @@ func (r *RevenuesModel) ResetRows(startDate, endDate string, memberId int) {
 			FixedSales:  revenueList[i].FixedSales,
 			PayType:     revenueList[i].PayType,
 			CreateDate:  revenueList[i].CreateDate,
+			delete:      revenueList[i].MemberId,
 		}
 	}
 
@@ -431,4 +482,5 @@ type RevenueTV struct {
 	FixedSales  int
 	PayType     string
 	CreateDate  string
+	delete      int
 }

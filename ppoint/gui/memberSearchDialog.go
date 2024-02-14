@@ -11,7 +11,7 @@ import (
 
 func RunMemberSearchDialog(owner walk.Form, memberList []dto.MemberDto,
 	memberIdLE, memberNameLE, phoneNumberLE, birthLE, udtLE *walk.LineEdit,
-	memberIdNE, pointNE, countNE, beforePointNE, afterPointNE, totalSalesNE, totalPointNE *walk.NumberEdit) (int, error) {
+	memberIdNE, pointNE, countNE, beforePointNE, afterPointNE, totalSalesNE, totalPointNE, addPointNE *walk.NumberEdit) (int, error) {
 	var dlg *walk.Dialog
 	var acceptPB, cancelPB *walk.PushButton
 	var tv *walk.TableView
@@ -75,7 +75,7 @@ func RunMemberSearchDialog(owner walk.Form, memberList []dto.MemberDto,
 								pointFL, _ := strconv.ParseFloat(fmt.Sprintf("%v", model.Value(index[0], 4)), 64)
 								pointNE.SetValue(pointFL)
 								beforePointNE.SetValue(pointFL)
-								afterPointNE.SetValue(pointFL)
+								afterPointNE.SetValue(pointFL + addPointNE.Value())
 								countFL, _ := strconv.ParseFloat(fmt.Sprintf("%v", model.Value(index[0], 5)), 64)
 								countNE.SetValue(countFL)
 								udtLE.SetText(fmt.Sprintf("%v", model.Value(index[0], 7)))

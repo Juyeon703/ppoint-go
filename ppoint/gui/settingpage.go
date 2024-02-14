@@ -12,6 +12,7 @@ type SettingPage struct {
 
 func newSettingPage(parent walk.Container) (Page, error) {
 	p := new(SettingPage)
+	moveId = 0
 
 	var pCash, pCard, pPointLimit, pDbBackupPath, pLogPath *walk.LineEdit
 

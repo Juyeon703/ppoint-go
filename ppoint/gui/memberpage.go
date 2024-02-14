@@ -33,6 +33,7 @@ func newMemberPage(parent walk.Container) (Page, error) {
 	const okTitle = "확인"
 	const cancelTitle = "취소"
 	const selectTitle = "매출 이력 조회"
+	moveId = 0
 
 	if err := (Composite{
 		AssignTo: &p.Composite,
@@ -230,7 +231,7 @@ func newMemberPage(parent walk.Container) (Page, error) {
 														updateBtn.SetText(updateTitle)
 														selectBtn.SetText(selectTitle)
 														model = tvReloading("", tv, tvResultLabel)
-
+														//TODO:멤버 수정 생일 에러
 														log.Debugf("(고객 관리 페이지) >>> 고객 정보 수정 : [%v]", updateMember)
 														MsgBox("수정 완료", "["+updateMember.MemberName+"] 회원 정보가 변경되었습니다.")
 														log.Debug("(고객 관리 페이지) >>> 고객 정보 수정 END")
@@ -254,7 +255,7 @@ func newMemberPage(parent walk.Container) (Page, error) {
 												log.Error(err.Error())
 												panic(err)
 											}
-											moveId = 0
+											//moveId = 0
 										}
 
 									} else if selectBtn.Text() == cancelTitle {
@@ -346,8 +347,8 @@ func newMemberPage(parent walk.Container) (Page, error) {
 				},
 				Model: model,
 				OnSelectedIndexesChanged: func() {
-					// 에러..?
 					index := tv.SelectedIndexes()
+
 					if len(index) > 0 {
 						isExistMember.MemberId = fmt.Sprintf("%v", model.Value(index[0], 0))
 						isExistMember.MemberName = fmt.Sprintf("%v", model.Value(index[0], 1))
