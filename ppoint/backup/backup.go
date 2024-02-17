@@ -21,9 +21,9 @@ func DbBackup(DbConf *query.DbConfig, wg *sync.WaitGroup, backupResult chan bool
 	var settingList []types.Setting
 	log = DbConf.Logue
 
-	prefixMemStr := "INSERT INTO `member` (`member_id`, `member_name`, `phone_number`, `birth`, `total_point`, `visit_count`, `create_date`, `update_date`) VALUES "
-	prefixRvnStr := "INSERT INTO `revenue` (`member_id`, `sales`, `sub_point`, `add_point`, `fixed_sales`, `pay_type`, `create_date`) VALUES "
-	prefixSettStr := "INSERT INTO `ppoint`.`setting` (`setting_type`, `setting_value`, `setting_description`) VALUES "
+	prefixMemStr := "INSERT INTO `member` (`member_id`, `member_name`, `phone_number`, `birth`, `total_point`, `visit_count`, `create_date`, `update_date`) VALUES \n"
+	prefixRvnStr := "\nINSERT INTO `revenue` (`member_id`, `sales`, `sub_point`, `add_point`, `fixed_sales`, `pay_type`, `create_date`) VALUES \n"
+	prefixSettStr := "\nINSERT INTO `ppoint`.`setting` (`setting_type`, `setting_value`, `setting_description`) VALUES \n"
 
 	currentDate := time.Now()
 	pastDate := currentDate.AddDate(0, -1, 0)
@@ -41,7 +41,7 @@ func DbBackup(DbConf *query.DbConfig, wg *sync.WaitGroup, backupResult chan bool
 
 	log.Debug("(데이터 백업) >>> START")
 	var bFile *os.File
-	backupFileFullPath := filepath.Join(dbBackupPath, currentDate.Format("2006_01_02"))
+	backupFileFullPath := filepath.Join(dbBackupPath, currentDate.Format("2006_01_02")+".sql")
 	if bFile, err = os.OpenFile(backupFileFullPath, os.O_CREATE|os.O_RDWR|os.O_TRUNC, os.FileMode(0777)); err != nil {
 		//file create fail
 		log.Errorf("(데이터 백업) >>> DB_BACKUP FILE OPEN 실패 : [%v]", err)
@@ -150,11 +150,11 @@ func clearOldBackupFile(backupPath string, pastDate time.Time) {
 	var err error
 	var backupFileFullPath string
 	var tempPastDate time.Time
-	backupFileFullPath = filepath.Join(backupPath, pastDate.Format("2006_01_02"))
+	backupFileFullPath = filepath.Join(backupPath, pastDate.Format("2006_01_02")+".sql")
 
 	tempPastDate = pastDate
 	for i := 0; i < 7; i++ {
-		backupFileFullPath = filepath.Join(backupPath, tempPastDate.Format("2006_01_02"))
+		backupFileFullPath = filepath.Join(backupPath, tempPastDate.Format("2006_01_02")+".sql")
 
 		//batch file 존재 여부 확인
 		if _, err = os.Stat(backupFileFullPath); err == nil {

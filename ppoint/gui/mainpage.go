@@ -19,8 +19,8 @@ type AppMainWindow struct {
 var winMain *AppMainWindow
 var dbconn *query.DbConfig
 var log *logue.Logbook
-var titleWidth, titleHeight = 950, 700
-var subWidth, subHeight = 950, 700
+var titleWidth, titleHeight = 900, 700
+var subWidth, subHeight = 900, 700
 var toolbarHeight = 60
 var cfg *MultiPageMainWindowConfig
 var multiPageMainWindow *MultiPageMainWindow
@@ -42,23 +42,7 @@ func MainPage(DbConf *query.DbConfig) {
 		Title: "PPOINT",
 		Name:  "mainWindow",
 		Size:  Size{titleWidth, titleHeight},
-		//MENU ITEM
-		MenuItems: []MenuItem{
-			Menu{
-				Text: "&Help",
-				Items: []MenuItem{
-					Action{
-						Text:        "About",
-						OnTriggered: func() { winMain.aboutAction_Triggered() },
-					},
-				},
 
-				//페이지 변경시마다 업데이트
-				//OnCurrentPageChanged: func() {
-			},
-		},
-		//	winMain.updateTitle(winMain.CurrentPageTitle())
-		//},
 		ToolBar: ToolBar{
 			Font:    Font{Bold: true},
 			MinSize: Size{titleWidth, toolbarHeight},

@@ -549,6 +549,8 @@ func newPointPage(parent walk.Container) (Page, error) {
 										MsgBox("알림", "매출 금액을 입력해주세요.")
 									} else if int(subPointNE.Value()) != 0 && int(subPointNE.Value()) < nPointLimit {
 										MsgBox("알림", "사용 포인트가 "+strconv.Itoa(nPointLimit)+"p 보다 많아야 합니다.")
+									} else if salesNE.Value() != 0 && int(salesNE.Value()) < int(subPointNE.Value()) {
+										MsgBox("알림", "매출 금액보다 사용 포인트가 많습니다.")
 									} else {
 										if err := ppdb.Submit(); err != nil {
 											log.Error(err)

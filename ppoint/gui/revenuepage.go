@@ -149,7 +149,7 @@ func newSalesPage(parent walk.Container) (Page, error) {
 					}},
 					{Title: "결제방법", DataMember: "PayType"},
 					{Title: "결제일", DataMember: "CreateDate", Width: 150},
-					{Title: "#", Width: 40, FormatFunc: func(value interface{}) string {
+					{Title: "#", Width: 40, Hidden: true, FormatFunc: func(value interface{}) string {
 						return "삭제"
 					}},
 				},
