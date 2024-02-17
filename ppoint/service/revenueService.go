@@ -133,21 +133,20 @@ func FindSumSalesPoint(dbconn *query.DbConfig, startDate, endDate string, member
 func RevenueDelete(dbconn *query.DbConfig, revenueId int, memberId int, subPoint int, addPoint int) error {
 	var err error
 	log := dbconn.Logue
+	var changePoint int
 
 	if subPoint == 0 { // 포인트 사용 안했을시 -> 적립금 o
-		if err = dbconn.UpdateMemberByDelete(memberId, addPoint); err != nil {
-			log.Errorf("(매출 삭제) >>>> 사용자 포인트 정보 업데이트 실패  : [%v]", err)
-			return err
-		}
-		if err = dbconn.DeleteRevenue(revenueId); err != nil {
-			log.Errorf("(매출 삭제) >>>> 매출 삭제 실패  : [%v]", err)
-			return err
-		}
+		changePoint = -addPoint
 	} else { // 포인트 사용했을시 -> 적립금 x
-		if err = dbconn.UpdateRevenue(revenueId, "결제 취소"); err != nil {
-			log.Errorf("(매출 삭제) >>>> 매출 정보 업데이트 실패 : [%v]", err)
-			return err
-		}
+		changePoint = subPoint
+	}
+	if err = dbconn.UpdateMemberByDelete(memberId, changePoint); err != nil {
+		log.Errorf("(매출 삭제) >>>> 사용자 포인트 정보 업데이트 실패  : [%v]", err)
+		return err
+	}
+	if err = dbconn.DeleteRevenue(revenueId); err != nil {
+		log.Errorf("(매출 삭제) >>>> 매출 삭제 실패  : [%v]", err)
+		return err
 	}
 
 	log.Debugf("(매출 삭제) >>>> revenueId : [%d], memberId : [%d], subPoint : [%d], addPoint : [%d]", revenueId, memberId, subPoint, addPoint)

@@ -24,7 +24,7 @@ func RunRevenueDeleteDialog(owner walk.Form) (int, error) {
 						Text: "삭제하시겠습니까?",
 					},
 					Label{
-						Text: "* 사용된 포인트는 취소되지 않습니다.\n * 삭제된 내역은 되살릴 수 없습니다.",
+						Text: "* 삭제된 내역은 되살릴 수 없습니다.",
 						//TextColor: walk.RGB(137, 0, 0),
 					},
 				},

@@ -23,9 +23,8 @@ func (dbc *DbConfig) UpdateMemberByPoint(id, changePoint int) error {
 	return err
 }
 
-// TODO: 방문횟수 어떻게? -> 현재 결제시에만 +1됨, 회원 정보 수정 시 변경 안됨, 결제 정보 삭제 시 어떻게?
 func (dbc *DbConfig) UpdateMemberByDelete(id, changePoint int) error {
-	_, err := dbc.DbConnection.Exec("UPDATE `ppoint`.`member` SET total_point=total_point-?, update_date=? WHERE member_id=?", changePoint, utils.CurrentTime(), id)
+	_, err := dbc.DbConnection.Exec("UPDATE `ppoint`.`member` SET total_point=total_point+?, visit_count=visit_count - 1, update_date=? WHERE member_id=?", changePoint, utils.CurrentTime(), id)
 	return err
 }
 
